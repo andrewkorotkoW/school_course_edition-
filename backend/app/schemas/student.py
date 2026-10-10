@@ -32,3 +32,25 @@ class IslandOut(BaseModel):
 class QuestCompleteIn(BaseModel):
     student_id: int
     quest_id: int
+
+
+class TaskOut(BaseModel):
+    """Answer-free view of a task - correct_answer/explanation stay server-side."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    quest_id: int
+    order: int
+    type: str
+    prompt: str
+    options: list[str] | None
+
+
+class TaskCheckIn(BaseModel):
+    answer: str
+
+
+class TaskCheckOut(BaseModel):
+    correct: bool
+    explanation: str

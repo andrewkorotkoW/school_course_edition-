@@ -15,13 +15,12 @@ def list_subjects(db: Session = Depends(get_db)) -> list[Subject]:
 
 
 @router.get("/{slug}/quests", response_model=list[QuestOut])
-def list_quests(slug: str, grade: int, db: Session = Depends(get_db)) -> list[Quest]:
+def list_quests(slug: str, grade: int | None = None, db: Session = Depends(get_db)) -> list[Quest]:
     subject = db.scalar(select(Subject).where(Subject.slug == slug))
     if subject is None:
         raise HTTPException(status_code=404, detail="Subject not found")
-    stmt = (
-        select(Quest)
-        .where(Quest.subject_id == subject.id, Quest.grade == grade)
-        .order_by(Quest.order)
-    )
+    stmt = select(Quest).where(Quest.subject_id == subject.id)
+    if grade is not None:
+        stmt = stmt.where(Quest.grade == grade)
+    stmt = stmt.order_by(Quest.grade, Quest.order)
     return list(db.scalars(stmt))

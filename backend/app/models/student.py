@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, UniqueConstraint
+from sqlalchemy import ForeignKey, JSON, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
@@ -53,6 +53,25 @@ class Quest(Base):
     growth_points: Mapped[int] = mapped_column(default=10)  # island growth on completion
 
     subject: Mapped["Subject"] = relationship(back_populates="quests")
+    tasks: Mapped[list["Task"]] = relationship(back_populates="quest", order_by="Task.order")
+
+
+class Task(Base):
+    """One exercise inside a quest. Checking is stateless and never penalizes -
+    a wrong answer just shows the explanation so the student can retry."""
+
+    __tablename__ = "tasks"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    quest_id: Mapped[int] = mapped_column(ForeignKey("quests.id"))
+    order: Mapped[int]
+    type: Mapped[str]  # "choice" | "input"
+    prompt: Mapped[str]
+    options: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    correct_answer: Mapped[str]
+    explanation: Mapped[str] = mapped_column(default="")
+
+    quest: Mapped["Quest"] = relationship(back_populates="tasks")
 
 
 class Progress(Base):

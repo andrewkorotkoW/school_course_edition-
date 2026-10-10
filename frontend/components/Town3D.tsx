@@ -3,33 +3,67 @@
 import { useRef } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, useGLTF } from "@react-three/drei";
 
 export type Building = { key: string; name: string; cost: number; emoji: string };
 
-type Style = {
-  color: string;
-  roofColor: string;
-  height: number;
-  roof: "pyramid" | "cone" | "flat";
+// Real low-poly models (Kenney "City Kit Commercial", CC0) mapped by eye to
+// our catalog keys - see public/models/buildings/CREDITS.md for which
+// original file each one is and why (no literal fountain/zoo/circus models
+// exist in the pack, so cheaper buildings got smaller models, pricier ones
+// got taller/grander ones).
+const MODEL_URLS: Record<string, string> = {
+  house: "/models/buildings/house.glb",
+  stall: "/models/buildings/stall.glb",
+  park: "/models/buildings/park.glb",
+  library: "/models/buildings/library.glb",
+  fountain: "/models/buildings/fountain.glb",
+  zoo: "/models/buildings/zoo.glb",
+  circus: "/models/buildings/circus.glb",
+  tower: "/models/buildings/tower.glb",
 };
 
-// Same catalog keys as app/core/catalog.py - low-poly stand-ins for the
-// emoji, not meant to replace them (the 2D shop still uses emoji icons).
-const BUILDING_STYLE: Record<string, Style> = {
-  house: { color: "#e8c07d", roofColor: "#b5542a", height: 1, roof: "pyramid" },
-  stall: { color: "#d97b5f", roofColor: "#7a4b2b", height: 0.7, roof: "flat" },
-  park: { color: "#7ed695", roofColor: "#4caf7d", height: 0.4, roof: "flat" },
-  library: { color: "#8aa6d6", roofColor: "#4a6fa5", height: 1.3, roof: "pyramid" },
-  fountain: { color: "#9fd8e0", roofColor: "#4bacc2", height: 0.5, roof: "cone" },
-  zoo: { color: "#c99be0", roofColor: "#8a5aa8", height: 0.9, roof: "cone" },
-  circus: { color: "#f28ba8", roofColor: "#d14f74", height: 1.6, roof: "cone" },
-  tower: { color: "#f2c14e", roofColor: "#c9941f", height: 2.4, roof: "cone" },
+Object.values(MODEL_URLS).forEach((url) => useGLTF.preload(url));
+
+// The pack's own palette (via its shared colormap.png texture) is mostly
+// white/grey concrete with blue glass - accurate, but flat and samey at a
+// glance. Tinting each building type with its catalog color (material.color
+// multiplies the texture) keeps the real architectural detail (windows,
+// awnings, floor lines) while giving the town the lively, distinguishable
+// colors the shop/catalog already promises.
+const TINT: Record<string, string> = {
+  house: "#f3d9a8",
+  stall: "#f0a98f",
+  park: "#bfe6c4",
+  library: "#aac3eb",
+  fountain: "#b9e8ef",
+  zoo: "#dcbdf0",
+  circus: "#f7b8cf",
+  tower: "#f8dd94",
 };
+
+function tintScene(scene: THREE.Object3D, hex: string): THREE.Object3D {
+  const clone = scene.clone(true);
+  const tint = new THREE.Color(hex);
+  clone.traverse((obj) => {
+    if (!(obj instanceof THREE.Mesh)) return;
+    const applyTint = (mat: THREE.Material) => {
+      const cloned = mat.clone();
+      if (cloned instanceof THREE.MeshStandardMaterial) {
+        cloned.color = cloned.color.clone().multiply(tint);
+      }
+      return cloned;
+    };
+    obj.material = Array.isArray(obj.material) ? obj.material.map(applyTint) : applyTint(obj.material);
+  });
+  return clone;
+}
 
 function BuildingMesh({ building, position }: { building: Building; position: [number, number, number] }) {
   const group = useRef<THREE.Group>(null);
-  const style = BUILDING_STYLE[building.key] ?? BUILDING_STYLE.house;
+  const url = MODEL_URLS[building.key] ?? MODEL_URLS.house;
+  const { scene } = useGLTF(url);
+  const tinted = tintScene(scene, TINT[building.key] ?? "#ffffff");
 
   useFrame((_, delta) => {
     const g = group.current;
@@ -43,44 +77,22 @@ function BuildingMesh({ building, position }: { building: Building; position: [n
 
   return (
     <group ref={group} position={position} scale={0.01}>
-      <mesh position={[0, style.height / 2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1, style.height, 1]} />
-        <meshStandardMaterial color={style.color} flatShading />
-      </mesh>
-
-      {style.roof === "pyramid" && (
-        <mesh position={[0, style.height + 0.35, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
-          <coneGeometry args={[0.8, 0.7, 4]} />
-          <meshStandardMaterial color={style.roofColor} flatShading />
-        </mesh>
-      )}
-      {style.roof === "cone" && (
-        <mesh position={[0, style.height + 0.4, 0]} castShadow>
-          <coneGeometry args={[0.6, 0.8, 16]} />
-          <meshStandardMaterial color={style.roofColor} flatShading />
-        </mesh>
-      )}
-      {style.roof === "flat" && (
-        <mesh position={[0, style.height + 0.05, 0]} castShadow>
-          <boxGeometry args={[1.1, 0.1, 1.1]} />
-          <meshStandardMaterial color={style.roofColor} flatShading />
-        </mesh>
-      )}
+      <primitive object={tinted} castShadow receiveShadow />
     </group>
   );
 }
 
 function Scene({ buildings }: { buildings: Building[] }) {
   const cols = 4;
-  const spacing = 1.8;
+  const spacing = 2.2;
 
   return (
     <>
-      <ambientLight intensity={0.7} />
-      <directionalLight position={[4, 6, 3]} intensity={1.1} castShadow shadow-mapSize={[1024, 1024]} />
+      <ambientLight intensity={1.1} />
+      <directionalLight position={[4, 6, 3]} intensity={1.6} castShadow shadow-mapSize={[1024, 1024]} />
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[20, 20]} />
+        <planeGeometry args={[24, 24]} />
         <meshStandardMaterial color="#8fd18c" />
       </mesh>
 
@@ -97,7 +109,7 @@ function Scene({ buildings }: { buildings: Building[] }) {
         autoRotateSpeed={0.6}
         enablePan={false}
         minDistance={4}
-        maxDistance={14}
+        maxDistance={18}
         maxPolarAngle={Math.PI / 2.1}
       />
     </>
@@ -107,7 +119,7 @@ function Scene({ buildings }: { buildings: Building[] }) {
 export default function Town3D({ buildings }: { buildings: Building[] }) {
   return (
     <div style={{ width: "100%", height: 420, borderRadius: 12, overflow: "hidden" }}>
-      <Canvas shadows camera={{ position: [6, 5, 8], fov: 45 }}>
+      <Canvas shadows camera={{ position: [8, 7, 10], fov: 45 }}>
         <color attach="background" args={["#bfe3ff"]} />
         {buildings.length > 0 ? (
           <Scene buildings={buildings} />
@@ -115,7 +127,7 @@ export default function Town3D({ buildings }: { buildings: Building[] }) {
           <>
             <ambientLight intensity={0.7} />
             <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-              <planeGeometry args={[20, 20]} />
+              <planeGeometry args={[24, 24]} />
               <meshStandardMaterial color="#8fd18c" />
             </mesh>
             <OrbitControls autoRotate autoRotateSpeed={0.6} enablePan={false} />

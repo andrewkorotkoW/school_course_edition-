@@ -9,6 +9,11 @@ services:
       - db_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-eduquest}"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
 
   backend:
     build: ./backend
@@ -16,7 +21,8 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://eduquest:eduquest@db:5432/eduquest}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
       - "8000:8000"
     volumes:

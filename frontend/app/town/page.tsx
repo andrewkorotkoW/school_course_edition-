@@ -1,6 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+
+// Three.js needs a real browser (WebGL) - importing it during Next.js's
+// server-side render of this client component would crash, so it's loaded
+// client-only.
+const Town3D = dynamic(() => import("../../components/Town3D"), { ssr: false });
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -60,26 +66,11 @@ export default function TownPage() {
         Баллы: <strong>{town.balance}</strong> (заработано всего: {town.earned_points})
       </p>
 
-      <div
-        style={{
-          background: "linear-gradient(#bfe3ff 0%, #bfe3ff 55%, #8fd18c 55%, #8fd18c 100%)",
-          borderRadius: 12,
-          padding: "1.5rem",
-          minHeight: 120,
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "0.75rem",
-          alignItems: "flex-end",
-        }}
-      >
-        {town.owned.length === 0 && <p style={{ opacity: 0.7 }}>Пока пусто — купи первую постройку в магазине.</p>}
-        {town.owned.map((b) => (
-          <div key={b.key} style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "2.5rem", lineHeight: 1 }}>{b.emoji}</div>
-            <div style={{ fontSize: "0.75rem" }}>{b.name}</div>
-          </div>
-        ))}
-      </div>
+      <Town3D buildings={town.owned} />
+      {town.owned.length === 0 && (
+        <p style={{ opacity: 0.7 }}>Пока пусто — купи первую постройку в магазине, она появится на поле.</p>
+      )}
+      <p style={{ fontSize: "0.85rem", opacity: 0.7 }}>Потяни мышкой, чтобы покрутить городок.</p>
 
       <h2 style={{ marginTop: "2rem" }}>Магазин</h2>
       {error && <p style={{ color: "crimson" }}>{error}</p>}

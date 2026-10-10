@@ -25,7 +25,7 @@ class Student(Base):
     parent_id: Mapped[int] = mapped_column(ForeignKey("parents.id"))
 
     parent: Mapped["Parent"] = relationship(back_populates="students")
-    island: Mapped["Island"] = relationship(back_populates="student", uselist=False)
+    wallet: Mapped["Wallet"] = relationship(back_populates="student", uselist=False)
     progress: Mapped[list["Progress"]] = relationship(back_populates="student")
 
 
@@ -50,7 +50,7 @@ class Quest(Base):
     order: Mapped[int]
     title: Mapped[str]
     story_text: Mapped[str] = mapped_column(default="")
-    growth_points: Mapped[int] = mapped_column(default=10)  # island growth on completion
+    reward_points: Mapped[int] = mapped_column(default=10)  # added to the wallet on completion
 
     subject: Mapped["Subject"] = relationship(back_populates="quests")
     tasks: Mapped[list["Task"]] = relationship(back_populates="quest", order_by="Task.order")
@@ -89,28 +89,31 @@ class Progress(Base):
     quest: Mapped["Quest"] = relationship()
 
 
-class Island(Base):
-    """The student's companion/island. Growth is monotonic - it never shrinks."""
+class Wallet(Base):
+    """Running total of points a student has earned from quests. Points are
+    spent via OwnedBuilding purchases - the balance (earned minus spent) is
+    computed in app/services/town.py, not stored here."""
 
-    __tablename__ = "islands"
+    __tablename__ = "wallets"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     student_id: Mapped[int] = mapped_column(ForeignKey("students.id"), unique=True)
-    growth_points: Mapped[int] = mapped_column(default=0)
+    earned_points: Mapped[int] = mapped_column(default=0)
 
-    student: Mapped["Student"] = relationship(back_populates="island")
+    student: Mapped["Student"] = relationship(back_populates="wallet")
 
-    @property
-    def stage(self) -> int:
-        """Visual growth stage derived from accumulated points.
 
-        Tuned to the seeded content (10 points/quest, 8 quests total): stage
-        changes after the 1st, 3rd, 5th and 7th completed quest, so growth
-        stays visible while there's only a handful of quests to play.
-        """
-        thresholds = [0, 10, 25, 45, 70]
-        stage = 0
-        for i, t in enumerate(thresholds):
-            if self.growth_points >= t:
-                stage = i
-        return stage
+class OwnedBuilding(Base):
+    """A building a student has bought for their town. The catalog (names,
+    costs, emoji) lives in app/core/catalog.py, not the database - this table
+    only records which keys a student owns and when."""
+
+    __tablename__ = "owned_buildings"
+    __table_args__ = (UniqueConstraint("student_id", "building_key", name="uq_student_building"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("students.id"))
+    building_key: Mapped[str]
+    purchased_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+
+    student: Mapped["Student"] = relationship()

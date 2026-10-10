@@ -18,15 +18,7 @@ class QuestOut(BaseModel):
     order: int
     title: str
     story_text: str
-    growth_points: int
-
-
-class IslandOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    student_id: int
-    growth_points: int
-    stage: int
+    reward_points: int
 
 
 class QuestCompleteIn(BaseModel):

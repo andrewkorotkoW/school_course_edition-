@@ -3,23 +3,17 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
-from app.models import Island, Progress, Quest, Student
-from app.schemas.student import IslandOut, QuestCompleteIn
+from app.models import Progress, Quest, Student, Wallet
+from app.schemas.student import QuestCompleteIn
+from app.schemas.town import TownOut
+from app.services.town import get_town_state
 
 router = APIRouter(prefix="/students", tags=["students"])
 
 
-@router.get("/{student_id}/island", response_model=IslandOut)
-def get_island(student_id: int, db: Session = Depends(get_db)) -> Island:
-    island = db.scalar(select(Island).where(Island.student_id == student_id))
-    if island is None:
-        raise HTTPException(status_code=404, detail="Island not found")
-    return island
-
-
-@router.post("/quests/complete", response_model=IslandOut)
-def complete_quest(payload: QuestCompleteIn, db: Session = Depends(get_db)) -> Island:
-    """Mark a quest done and grow the island. Idempotent: repeat calls don't double-grow."""
+@router.post("/quests/complete", response_model=TownOut)
+def complete_quest(payload: QuestCompleteIn, db: Session = Depends(get_db)) -> TownOut:
+    """Mark a quest done and credit the wallet. Idempotent: repeat calls don't double-pay."""
     student = db.get(Student, payload.student_id)
     quest = db.get(Quest, payload.quest_id)
     if student is None or quest is None:
@@ -31,15 +25,15 @@ def complete_quest(payload: QuestCompleteIn, db: Session = Depends(get_db)) -> I
             Progress.quest_id == payload.quest_id,
         )
     )
-    island = db.scalar(select(Island).where(Island.student_id == payload.student_id))
-    if island is None:
-        island = Island(student_id=payload.student_id, growth_points=0)
-        db.add(island)
+    wallet = db.scalar(select(Wallet).where(Wallet.student_id == payload.student_id))
+    if wallet is None:
+        wallet = Wallet(student_id=payload.student_id, earned_points=0)
+        db.add(wallet)
 
     if already_done is None:
         db.add(Progress(student_id=payload.student_id, quest_id=payload.quest_id))
-        island.growth_points += quest.growth_points
+        wallet.earned_points += quest.reward_points
 
     db.commit()
-    db.refresh(island)
-    return island
+
+    return get_town_state(db, payload.student_id)

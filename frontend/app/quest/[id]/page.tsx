@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import IslandCanvas from "../../../components/IslandCanvas";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -21,6 +22,12 @@ type Feedback = {
   explanation: string;
 };
 
+type Island = {
+  student_id: number;
+  growth_points: number;
+  stage: number;
+};
+
 export default function QuestPage({ params }: { params: { id: string } }) {
   const questId = params.id;
 
@@ -29,11 +36,19 @@ export default function QuestPage({ params }: { params: { id: string } }) {
   const [inputValue, setInputValue] = useState("");
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [finished, setFinished] = useState(false);
+  const [startStage, setStartStage] = useState(0);
+  const [endStage, setEndStage] = useState(0);
 
   useEffect(() => {
     fetch(`${API_URL}/quests/${questId}/tasks`)
       .then((res) => res.json())
       .then(setTasks);
+
+    // Capture the island's stage before this quest, so the finish screen
+    // can animate the actual before -> after growth instead of just a number.
+    fetch(`${API_URL}/students/${DEMO_STUDENT_ID}/island`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((island: Island | null) => setStartStage(island?.stage ?? 0));
   }, [questId]);
 
   const currentTask = tasks?.[index];
@@ -60,11 +75,13 @@ export default function QuestPage({ params }: { params: { id: string } }) {
     }
 
     // Last task answered correctly - grow the island.
-    await fetch(`${API_URL}/students/quests/complete`, {
+    const res = await fetch(`${API_URL}/students/quests/complete`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ student_id: DEMO_STUDENT_ID, quest_id: Number(questId) }),
     });
+    const island: Island = await res.json();
+    setEndStage(island.stage);
     setFinished(true);
   }
 
@@ -74,7 +91,7 @@ export default function QuestPage({ params }: { params: { id: string } }) {
     return (
       <main style={{ fontFamily: "sans-serif", padding: "2rem" }}>
         <h1>Квест пройден! 🎉</h1>
-        <p>Остров подрос от твоих заданий.</p>
+        <IslandCanvas stage={endStage} fromStage={startStage} />
         <a href="/island">Посмотреть остров →</a>
       </main>
     );

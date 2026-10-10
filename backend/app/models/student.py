@@ -102,8 +102,13 @@ class Island(Base):
 
     @property
     def stage(self) -> int:
-        """Visual growth stage derived from accumulated points - tune thresholds later."""
-        thresholds = [0, 30, 80, 150, 250]
+        """Visual growth stage derived from accumulated points.
+
+        Tuned to the seeded content (10 points/quest, 8 quests total): stage
+        changes after the 1st, 3rd, 5th and 7th completed quest, so growth
+        stays visible while there's only a handful of quests to play.
+        """
+        thresholds = [0, 10, 25, 45, 70]
         stage = 0
         for i, t in enumerate(thresholds):
             if self.growth_points >= t:

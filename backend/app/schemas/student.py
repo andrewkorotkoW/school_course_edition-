@@ -18,12 +18,17 @@ class QuestOut(BaseModel):
     order: int
     title: str
     story_text: str
-    reward_points: int
 
 
 class QuestCompleteIn(BaseModel):
     student_id: int
     quest_id: int
+
+
+class QuestCompleteOut(BaseModel):
+    student_id: int
+    quest_id: int
+    completed: bool
 
 
 class TaskOut(BaseModel):

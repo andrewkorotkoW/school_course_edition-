@@ -25,7 +25,6 @@ class Student(Base):
     parent_id: Mapped[int] = mapped_column(ForeignKey("parents.id"))
 
     parent: Mapped["Parent"] = relationship(back_populates="students")
-    wallet: Mapped["Wallet"] = relationship(back_populates="student", uselist=False)
     progress: Mapped[list["Progress"]] = relationship(back_populates="student")
 
 
@@ -50,7 +49,6 @@ class Quest(Base):
     order: Mapped[int]
     title: Mapped[str]
     story_text: Mapped[str] = mapped_column(default="")
-    reward_points: Mapped[int] = mapped_column(default=10)  # added to the wallet on completion
 
     subject: Mapped["Subject"] = relationship(back_populates="quests")
     tasks: Mapped[list["Task"]] = relationship(back_populates="quest", order_by="Task.order")
@@ -87,33 +85,3 @@ class Progress(Base):
 
     student: Mapped["Student"] = relationship(back_populates="progress")
     quest: Mapped["Quest"] = relationship()
-
-
-class Wallet(Base):
-    """Running total of points a student has earned from quests. Points are
-    spent via OwnedBuilding purchases - the balance (earned minus spent) is
-    computed in app/services/town.py, not stored here."""
-
-    __tablename__ = "wallets"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    student_id: Mapped[int] = mapped_column(ForeignKey("students.id"), unique=True)
-    earned_points: Mapped[int] = mapped_column(default=0)
-
-    student: Mapped["Student"] = relationship(back_populates="wallet")
-
-
-class OwnedBuilding(Base):
-    """A building a student has bought for their town. The catalog (names,
-    costs, emoji) lives in app/core/catalog.py, not the database - this table
-    only records which keys a student owns and when."""
-
-    __tablename__ = "owned_buildings"
-    __table_args__ = (UniqueConstraint("student_id", "building_key", name="uq_student_building"),)
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    student_id: Mapped[int] = mapped_column(ForeignKey("students.id"))
-    building_key: Mapped[str]
-    purchased_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-
-    student: Mapped["Student"] = relationship()

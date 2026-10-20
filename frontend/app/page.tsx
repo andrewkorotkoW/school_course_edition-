@@ -41,8 +41,8 @@ export default function Home() {
 
   return (
     <main style={{ fontFamily: "sans-serif", padding: "2rem" }}>
-      <h1>EduQuest — 1–4 класс</h1>
-      <p>Выполняй задания, зарабатывай баллы и строй свой городок. Без рейтингов и проигрышей.</p>
+      <h1>EduQuest</h1>
+      <p>Выполняй задания по школьной программе. Без рейтингов и проигрышей.</p>
 
       {error && <p style={{ color: "crimson" }}>{error}</p>}
       {!error && !subjects && <p>Загрузка предметов...</p>}
@@ -60,10 +60,6 @@ export default function Home() {
           </ul>
         </section>
       ))}
-
-      <p>
-        <a href="/town">Открыть городок →</a>
-      </p>
     </main>
   );
 }

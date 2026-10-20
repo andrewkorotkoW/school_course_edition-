@@ -260,7 +260,6 @@ def run() -> None:
                     order=1,
                     title=quest_data["title"],
                     story_text=quest_data["story_text"],
-                    reward_points=10,
                 )
                 db.add(quest)
                 db.flush()

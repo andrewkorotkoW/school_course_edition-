@@ -21,12 +21,6 @@ type Feedback = {
   explanation: string;
 };
 
-type Town = {
-  student_id: number;
-  earned_points: number;
-  balance: number;
-};
-
 export default function QuestPage({ params }: { params: { id: string } }) {
   const questId = params.id;
 
@@ -35,19 +29,11 @@ export default function QuestPage({ params }: { params: { id: string } }) {
   const [inputValue, setInputValue] = useState("");
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [finished, setFinished] = useState(false);
-  const [startBalance, setStartBalance] = useState(0);
-  const [endBalance, setEndBalance] = useState(0);
 
   useEffect(() => {
     fetch(`${API_URL}/quests/${questId}/tasks`)
       .then((res) => res.json())
       .then(setTasks);
-
-    // Capture the balance before this quest, so the finish screen can show
-    // exactly how many points this quest earned.
-    fetch(`${API_URL}/students/${DEMO_STUDENT_ID}/town`)
-      .then((res) => res.json())
-      .then((town: Town) => setStartBalance(town.balance));
   }, [questId]);
 
   const currentTask = tasks?.[index];
@@ -73,29 +59,22 @@ export default function QuestPage({ params }: { params: { id: string } }) {
       return;
     }
 
-    // Last task answered correctly - credit the wallet.
-    const res = await fetch(`${API_URL}/students/quests/complete`, {
+    // Last task answered correctly - mark the quest done.
+    await fetch(`${API_URL}/students/quests/complete`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ student_id: DEMO_STUDENT_ID, quest_id: Number(questId) }),
     });
-    const town: Town = await res.json();
-    setEndBalance(town.balance);
     setFinished(true);
   }
 
   if (!tasks) return <main style={{ padding: "2rem" }}>Загрузка...</main>;
 
   if (finished) {
-    const earned = endBalance - startBalance;
     return (
       <main style={{ fontFamily: "sans-serif", padding: "2rem" }}>
         <h1>Квест пройден! 🎉</h1>
-        <p>
-          {earned > 0 ? `+${earned} баллов. ` : ""}
-          Баланс: {endBalance}.
-        </p>
-        <a href="/town">Открыть городок →</a>
+        <a href="/">← К заданиям</a>
       </main>
     );
   }

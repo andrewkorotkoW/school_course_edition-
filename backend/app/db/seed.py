@@ -44,6 +44,14 @@ QUESTS: dict[str, dict[int, dict]] = {
                     "correct_answer": "5",
                     "explanation": "От 9 отними 4 — останется 5.",
                 },
+                {
+                    "type": "puzzle",
+                    "puzzle_kind": "order_tap",
+                    "prompt": "Нажимай на числа по порядку — от самого маленького к самому большому",
+                    "config": {"items": ["4", "1", "3", "2"], "order": ["1", "2", "3", "4"]},
+                    "correct_answer": "1,2,3,4",
+                    "explanation": "Самое маленькое число — 1, потом 2, потом 3, и самое большое — 4.",
+                },
             ],
         },
         2: {

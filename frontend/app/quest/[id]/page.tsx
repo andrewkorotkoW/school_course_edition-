@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import CountClickPuzzle from "../../../components/puzzles/CountClickPuzzle";
+import OrderTapPuzzle from "../../../components/puzzles/OrderTapPuzzle";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -108,12 +109,13 @@ export default function QuestPage({ params }: { params: { id: string } }) {
 
       {currentTask?.type === "puzzle" && !feedback && (
         <>
-          {currentTask.puzzle_kind === "count_click" ? (
-            <CountClickPuzzle
-              config={currentTask.config ?? {}}
-              onSubmit={submitAnswer}
-            />
-          ) : (
+          {currentTask.puzzle_kind === "count_click" && (
+            <CountClickPuzzle config={currentTask.config ?? {}} onSubmit={submitAnswer} />
+          )}
+          {currentTask.puzzle_kind === "order_tap" && (
+            <OrderTapPuzzle config={currentTask.config ?? {}} onSubmit={submitAnswer} />
+          )}
+          {currentTask.puzzle_kind !== "count_click" && currentTask.puzzle_kind !== "order_tap" && (
             <p style={{ color: "crimson" }}>
               Неизвестный тип головоломки: {currentTask.puzzle_kind}
             </p>

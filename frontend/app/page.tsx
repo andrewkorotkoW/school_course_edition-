@@ -43,20 +43,22 @@ export default function Home() {
   const subjectName = (subjectId: number) =>
     subjects?.find((s) => s.id === subjectId)?.name ?? "Предмет";
 
-  // Node status (completed / current / locked) is derived from the full
-  // program order returned by the backend, before the quests get split into
-  // per-subject path sections below.
-  const questMapEntries = buildQuestMapEntries(quests ?? []);
+  // Each subject is its own path: group quests by subject first, then derive
+  // completed/current/locked per subject so e.g. the first russian quest can
+  // be "current" even while every math quest is still unfinished.
+  const questsBySubject = (quests ?? []).reduce<Record<number, Quest[]>>((acc, quest) => {
+    const key = quest.subject_id;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(quest);
+    return acc;
+  }, {});
 
-  const entriesBySubject = questMapEntries.reduce<Record<number, QuestMapEntry<Quest>[]>>(
-    (acc, entry) => {
-      const key = entry.quest.subject_id;
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(entry);
-      return acc;
-    },
-    {}
-  );
+  const entriesBySubject = Object.fromEntries(
+    Object.entries(questsBySubject).map(([subjectId, subjectQuests]) => [
+      subjectId,
+      buildQuestMapEntries(subjectQuests),
+    ])
+  ) as Record<number, QuestMapEntry<Quest>[]>;
 
   return (
     <main className="page">

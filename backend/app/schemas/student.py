@@ -18,6 +18,7 @@ class QuestOut(BaseModel):
     order: int
     title: str
     story_text: str
+    completed: bool = False
 
 
 class QuestCompleteIn(BaseModel):

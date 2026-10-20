@@ -10,7 +10,7 @@ router = APIRouter(prefix="/students", tags=["students"])
 
 
 @router.get("/{student_id}/quests", response_model=list[QuestOut])
-def list_student_quests(student_id: int, db: Session = Depends(get_db)) -> list[Quest]:
+def list_student_quests(student_id: int, db: Session = Depends(get_db)) -> list[QuestOut]:
     student = db.get(Student, student_id)
     if student is None:
         raise HTTPException(status_code=404, detail="Student not found")
@@ -25,7 +25,23 @@ def list_student_quests(student_id: int, db: Session = Depends(get_db)) -> list[
         .where(ProgramQuest.program_id == student.program_id)
         .order_by(Quest.subject_id, Quest.grade, Quest.order)
     )
-    return list(db.scalars(stmt))
+    quests = list(db.scalars(stmt))
+
+    completed_ids: set[int] = set()
+    if quests:
+        quest_ids = [q.id for q in quests]
+        rows = db.scalars(
+            select(Progress.quest_id).where(
+                Progress.student_id == student_id,
+                Progress.quest_id.in_(quest_ids),
+            )
+        )
+        completed_ids = set(rows)
+
+    return [
+        QuestOut.model_validate(q, from_attributes=True).model_copy(update={"completed": q.id in completed_ids})
+        for q in quests
+    ]
 
 
 @router.post("/quests/complete", response_model=QuestCompleteOut)

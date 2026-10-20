@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 
 type Subject = {
   id: number;
@@ -47,23 +47,39 @@ export default function Home() {
   }, {});
 
   return (
-    <main style={{ fontFamily: "sans-serif", padding: "2rem" }}>
-      <h1>EduQuest</h1>
-      <p>Выполняй задания по школьной программе. Без рейтингов и проигрышей.</p>
+    <main className="page">
+      <header className="page-header fade-in-up">
+        <h1 className="page-title">EduQuest</h1>
+        <p className="page-subtitle">
+          Выполняй задания по школьной программе. Без рейтингов и проигрышей.
+        </p>
+      </header>
 
-      {error && <p style={{ color: "crimson" }}>{error}</p>}
-      {!error && !quests && <p>Загрузка заданий...</p>}
+      {error && <p className="state-message state-message-error fade-in-up">{error}</p>}
+      {!error && !quests && (
+        <p className="state-message state-message-loading fade-in-up">Загрузка заданий...</p>
+      )}
 
-      {!error && quests?.length === 0 && <p>Программа пока не назначена.</p>}
+      {!error && quests?.length === 0 && (
+        <p className="state-message state-message-empty fade-in-up">
+          Программа пока не назначена.
+        </p>
+      )}
 
-      {Object.entries(questsBySubject).map(([subjectId, subjectQuests]) => (
-        <section key={subjectId} style={{ marginBottom: "1.5rem" }}>
-          <h2>{subjectName(Number(subjectId))}</h2>
-          <ul>
+      {Object.entries(questsBySubject).map(([subjectId, subjectQuests], sectionIndex) => (
+        <section
+          key={subjectId}
+          className="subject-section stagger-item"
+          style={{ "--stagger-index": sectionIndex } as CSSProperties}
+        >
+          <h2 className="subject-title">{subjectName(Number(subjectId))}</h2>
+          <ul className="quest-grid">
             {subjectQuests.map((q) => (
               <li key={q.id}>
-                {q.grade} класс:{" "}
-                <a href={`/quest/${q.id}`}>{q.title}</a>
+                <a href={`/quest/${q.id}`} className="card quest-card">
+                  <span className="quest-card-grade">{q.grade} класс</span>
+                  <p className="quest-card-title">{q.title}</p>
+                </a>
               </li>
             ))}
           </ul>

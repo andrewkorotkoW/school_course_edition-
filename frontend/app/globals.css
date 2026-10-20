@@ -1,0 +1,290 @@
+/* EduQuest design system — hand-rolled CSS, no new npm deps.
+   Warm, friendly palette for grades 1-5, WCAG AA contrast on body text. */
+
+:root {
+  /* Palette */
+  --color-bg: #fff8ef;
+  --color-surface: #ffffff;
+  --color-primary: #ff7a3d;
+  --color-primary-dark: #e6632a;
+  --color-secondary: #2fa88a;
+  --color-accent: #ffc94d;
+  --color-text: #3a2e26;
+  --color-text-muted: #6b5c50;
+  --color-border: #f1e2cf;
+  --color-success: #2fa88a;
+  --color-success-bg: #e4f7f0;
+  --color-error: #e2483d;
+  --color-error-bg: #fdeceb;
+
+  /* Spacing */
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1.25rem;
+  --space-lg: 2rem;
+  --space-xl: 3rem;
+
+  /* Radius */
+  --radius-sm: 0.75rem;
+  --radius-md: 1.25rem;
+  --radius-pill: 999px;
+
+  /* Shadow */
+  --shadow-sm: 0 2px 6px rgba(58, 46, 38, 0.08);
+  --shadow-md: 0 8px 24px rgba(58, 46, 38, 0.12);
+  --shadow-lift: 0 14px 30px rgba(58, 46, 38, 0.18);
+
+  --font-sans: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Layout */
+
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--space-lg) var(--space-md) var(--space-xl);
+}
+
+.page-header {
+  margin-bottom: var(--space-lg);
+}
+
+.page-title {
+  margin: 0 0 var(--space-xs);
+  font-size: 2rem;
+  color: var(--color-primary-dark);
+}
+
+.page-subtitle {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 1.05rem;
+}
+
+.subject-section {
+  margin-bottom: var(--space-lg);
+}
+
+.subject-title {
+  margin: 0 0 var(--space-sm);
+  font-size: 1.4rem;
+  color: var(--color-text);
+}
+
+.quest-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-sm);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 600px) {
+  .quest-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .quest-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Card */
+
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-md);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.card:active {
+  transform: translateY(-1px);
+}
+
+/* Quest card: a card that is also a full-size tap target / link */
+
+.quest-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.quest-card-grade {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 0.15rem 0.6rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-text);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.quest-card-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* Buttons */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.6rem 1.5rem;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn:active {
+  transform: scale(0.96);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-dark);
+}
+
+/* State messages */
+
+.state-message {
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  font-size: 1rem;
+}
+
+.state-message-loading {
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  box-shadow: var(--shadow-sm);
+}
+
+.state-message-error {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.state-message-empty {
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Fade-in / stagger animations */
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fade-in-up 0.5s ease both;
+}
+
+.stagger-item {
+  opacity: 0;
+  animation: fade-in-up 0.5s ease both;
+  animation-delay: calc(var(--stagger-index, 0) * 80ms);
+}
+
+/* Success / error feedback animations, reusable in quest page & puzzles */
+
+@keyframes pulse-success {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.pulse-success {
+  animation: pulse-success 0.4s ease;
+}
+
+@keyframes shake-error {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+.shake-error {
+  animation: shake-error 0.4s ease;
+}

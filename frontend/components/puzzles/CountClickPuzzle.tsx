@@ -32,33 +32,23 @@ export default function CountClickPuzzle({ config, onSubmit }: Props) {
 
   return (
     <div>
-      <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1rem" }}>
+      <div className="count-click-grid">
         {collected.map((isCollected, i) => (
           <button
             key={i}
             onClick={() => collect(i)}
             disabled={isCollected}
             aria-label={`Собрать предмет ${i + 1} из ${total}`}
-            style={{
-              fontSize: "2.5rem",
-              lineHeight: 1,
-              background: "none",
-              border: "none",
-              padding: 0,
-              cursor: isCollected ? "default" : "pointer",
-              opacity: isCollected ? 0.15 : 1,
-              transform: isCollected ? "scale(0.75)" : "scale(1)",
-              transition: "opacity 0.2s ease, transform 0.2s ease",
-            }}
+            className={`count-click-item ${isCollected ? "count-click-item-collected" : ""}`}
           >
             {emoji}
           </button>
         ))}
       </div>
 
-      <p>Собрано: {collectedCount}</p>
+      <p className="count-click-count">Собрано: {collectedCount}</p>
 
-      <button onClick={() => onSubmit(String(collectedCount))} disabled={!allCollected}>
+      <button className="btn btn-primary" onClick={() => onSubmit(String(collectedCount))} disabled={!allCollected}>
         Готово
       </button>
     </div>

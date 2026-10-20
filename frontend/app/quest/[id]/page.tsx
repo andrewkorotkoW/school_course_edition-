@@ -184,6 +184,7 @@ export default function QuestPage({ params }: { params: { id: string } }) {
               className="quest-input"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
+              aria-label={currentTask?.prompt ? `Введите ответ: ${currentTask.prompt}` : "Введите ответ"}
             />
             <button className="btn btn-primary" onClick={() => submitAnswer(inputValue)}>
               Проверить

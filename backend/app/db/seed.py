@@ -25,9 +25,10 @@ QUESTS: dict[str, dict[int, dict]] = {
             "story_text": "Помоги жителям городка пересчитать припасы на зиму.",
             "tasks": [
                 {
-                    "type": "choice",
-                    "prompt": "Сколько яблок на картинке: 🍎🍎🍎?",
-                    "options": ["2", "3", "4"],
+                    "type": "puzzle",
+                    "puzzle_kind": "count_click",
+                    "prompt": "Собери все яблоки и посчитай, сколько их было",
+                    "config": {"emoji": "🍎", "count": 3},
                     "correct_answer": "3",
                     "explanation": "Посчитай яблоки по одному: 🍎(1) 🍎(2) 🍎(3) — всего 3.",
                 },

@@ -42,6 +42,8 @@ class TaskOut(BaseModel):
     type: str
     prompt: str
     options: list[str] | None
+    puzzle_kind: str | None = None
+    config: dict | None = None
 
 
 class TaskCheckIn(BaseModel):

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import CountClickPuzzle from "../../../components/puzzles/CountClickPuzzle";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -11,9 +12,11 @@ type Task = {
   id: number;
   quest_id: number;
   order: number;
-  type: "choice" | "input";
+  type: "choice" | "input" | "puzzle";
   prompt: string;
   options: string[] | null;
+  puzzle_kind?: string | null;
+  config?: Record<string, unknown> | null;
 };
 
 type Feedback = {
@@ -101,6 +104,21 @@ export default function QuestPage({ params }: { params: { id: string } }) {
           <input value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
           <button onClick={() => submitAnswer(inputValue)}>Проверить</button>
         </div>
+      )}
+
+      {currentTask?.type === "puzzle" && !feedback && (
+        <>
+          {currentTask.puzzle_kind === "count_click" ? (
+            <CountClickPuzzle
+              config={currentTask.config ?? {}}
+              onSubmit={submitAnswer}
+            />
+          ) : (
+            <p style={{ color: "crimson" }}>
+              Неизвестный тип головоломки: {currentTask.puzzle_kind}
+            </p>
+          )}
+        </>
       )}
 
       {feedback && (

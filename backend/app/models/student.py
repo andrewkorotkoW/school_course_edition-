@@ -65,11 +65,18 @@ class Task(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     quest_id: Mapped[int] = mapped_column(ForeignKey("quests.id"))
     order: Mapped[int]
-    type: Mapped[str]  # "choice" | "input"
+    type: Mapped[str]  # "choice" | "input" | "puzzle"
     prompt: Mapped[str]
     options: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     correct_answer: Mapped[str]
     explanation: Mapped[str] = mapped_column(default="")
+    # Only set when type == "puzzle". puzzle_kind picks which frontend game
+    # component renders the task (e.g. "count_click"); config is that
+    # component's own data shape (e.g. {"items": ["🍎", ...]}).
+    # The puzzle still submits a plain string answer through the same
+    # /tasks/{id}/check endpoint as choice/input - only the UI differs.
+    puzzle_kind: Mapped[str | None] = mapped_column(nullable=True)
+    config: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     quest: Mapped["Quest"] = relationship(back_populates="tasks")
 

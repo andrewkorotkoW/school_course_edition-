@@ -288,3 +288,240 @@ a {
 .shake-error {
   animation: shake-error 0.4s ease;
 }
+
+/* Quest page */
+
+.quest-page {
+  max-width: 640px;
+}
+
+.quest-progress {
+  margin-bottom: var(--space-lg);
+}
+
+.quest-progress-label {
+  margin: 0 0 var(--space-xs);
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.quest-progress-track {
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.quest-progress-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  transition: width 0.3s ease;
+}
+
+.quest-task-card {
+  margin-bottom: var(--space-md);
+}
+
+.quest-task-prompt {
+  margin: 0 0 var(--space-md);
+  font-size: 1.3rem;
+}
+
+.quest-choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.quest-choice-btn {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  font-size: 1.05rem;
+}
+
+.quest-input-row {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.quest-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.quest-input:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.quest-puzzle-wrapper {
+  margin-top: var(--space-xs);
+}
+
+.btn-lg {
+  min-height: 52px;
+  padding: 0.75rem 2rem;
+  font-size: 1.1rem;
+}
+
+/* Feedback */
+
+.quest-feedback {
+  margin-top: var(--space-md);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+
+.quest-feedback-success {
+  background: var(--color-success-bg);
+}
+
+.quest-feedback-success-text {
+  margin: 0;
+  color: var(--color-success);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.quest-feedback-error {
+  background: var(--color-error-bg);
+}
+
+.quest-feedback-error-text {
+  margin: 0;
+  color: var(--color-error);
+  font-size: 1rem;
+}
+
+/* Finished screen */
+
+.quest-finished {
+  position: relative;
+  text-align: center;
+  padding: var(--space-xl) var(--space-md);
+  overflow: hidden;
+}
+
+.quest-finished-emoji {
+  font-size: 4rem;
+  margin: 0 0 var(--space-sm);
+}
+
+.quest-finished-title {
+  margin: 0 0 var(--space-md);
+  font-size: 1.8rem;
+  color: var(--color-primary-dark);
+}
+
+.quest-finished-link {
+  display: inline-flex;
+  margin-top: var(--space-sm);
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -10%;
+  width: 10px;
+  height: 14px;
+  opacity: 0.9;
+  animation: confetti-fall 2.4s ease-in infinite;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(420px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.confetti-piece:nth-child(1) {
+  left: 6%;
+  background: var(--color-primary);
+  animation-delay: 0s;
+}
+
+.confetti-piece:nth-child(2) {
+  left: 18%;
+  background: var(--color-secondary);
+  animation-delay: 0.2s;
+}
+
+.confetti-piece:nth-child(3) {
+  left: 30%;
+  background: var(--color-accent);
+  animation-delay: 0.4s;
+}
+
+.confetti-piece:nth-child(4) {
+  left: 42%;
+  background: var(--color-primary-dark);
+  animation-delay: 0.1s;
+}
+
+.confetti-piece:nth-child(5) {
+  left: 55%;
+  background: var(--color-secondary);
+  animation-delay: 0.5s;
+}
+
+.confetti-piece:nth-child(6) {
+  left: 68%;
+  background: var(--color-accent);
+  animation-delay: 0.3s;
+}
+
+.confetti-piece:nth-child(7) {
+  left: 80%;
+  background: var(--color-primary);
+  animation-delay: 0.6s;
+}
+
+.confetti-piece:nth-child(8) {
+  left: 92%;
+  background: var(--color-secondary);
+  animation-delay: 0.15s;
+}
+
+/* Loading spinner */
+
+.state-message-loading-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

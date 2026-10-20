@@ -200,6 +200,18 @@ a {
   background: var(--color-primary-dark);
 }
 
+.btn:disabled {
+  cursor: default;
+  opacity: 0.4;
+  box-shadow: none;
+  transform: none;
+}
+
+.btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 /* State messages */
 
 .state-message {
@@ -524,4 +536,142 @@ a {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Puzzle components: CountClickPuzzle, OrderTapPuzzle */
+
+@keyframes collect-pop {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  35% {
+    transform: scale(1.35);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(0.55);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(0.75);
+    opacity: 0.15;
+  }
+}
+
+.count-click-grid {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-md);
+}
+
+.count-click-item {
+  min-width: 48px;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  line-height: 1;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.count-click-item:not(:disabled):hover {
+  background: var(--color-border);
+}
+
+.count-click-item:not(:disabled):active {
+  transform: scale(0.9);
+}
+
+.count-click-item-collected {
+  cursor: default;
+  opacity: 0.15;
+  transform: scale(0.75);
+  animation: collect-pop 0.4s ease;
+}
+
+.count-click-count {
+  color: var(--color-text-muted);
+  font-size: 1.05rem;
+}
+
+.order-tap-answer-zone {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+  min-height: 3rem;
+  margin-bottom: var(--space-md);
+  align-items: center;
+}
+
+.order-tap-placeholder {
+  color: var(--color-text-muted);
+}
+
+@keyframes order-tap-drop-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.8);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(2px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.order-tap-pill {
+  padding: 0.4rem 0.9rem;
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border-radius: var(--radius-pill);
+  font-size: 1.1rem;
+  font-weight: 600;
+  animation: order-tap-drop-in 0.3s ease both;
+}
+
+.order-tap-tiles {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-md);
+}
+
+.order-tap-tile {
+  min-height: 48px;
+  min-width: 48px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  padding: 0.6rem 1.1rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.2s ease;
+}
+
+.order-tap-tile:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.order-tap-tile:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+.order-tap-tile:disabled {
+  opacity: 0.2;
+  cursor: default;
 }

@@ -29,7 +29,7 @@ export default function OrderTapPuzzle({ config, onSubmit }: Props) {
     const expected = order[placed.length];
     if (item !== expected) {
       setShakeIndex(i);
-      setTimeout(() => setShakeIndex(null), 250);
+      setTimeout(() => setShakeIndex(null), 400);
       return;
     }
     setPlaced((prev) => [...prev, item]);
@@ -38,48 +38,29 @@ export default function OrderTapPuzzle({ config, onSubmit }: Props) {
 
   return (
     <div>
-      <div
-        style={{
-          display: "flex",
-          gap: "0.5rem",
-          marginBottom: "1rem",
-          minHeight: "2.75rem",
-          padding: "0.5rem",
-          border: "1px dashed #999",
-          borderRadius: 8,
-        }}
-      >
-        {placed.length === 0 && <span style={{ opacity: 0.5 }}>Твой порядок появится здесь</span>}
+      <div className="card order-tap-answer-zone">
+        {placed.length === 0 && <span className="order-tap-placeholder">Твой порядок появится здесь</span>}
         {placed.map((p, i) => (
-          <span
-            key={i}
-            style={{ padding: "0.4rem 0.7rem", background: "#dff5e1", borderRadius: 6, fontSize: "1.1rem" }}
-          >
+          <span key={i} className="order-tap-pill">
             {p}
           </span>
         ))}
       </div>
 
-      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+      <div className="order-tap-tiles">
         {items.map((item, i) => (
           <button
             key={i}
             onClick={() => tap(item, i)}
             disabled={usedIndices.has(i)}
-            style={{
-              fontSize: "1.25rem",
-              padding: "0.5rem 1rem",
-              opacity: usedIndices.has(i) ? 0.2 : 1,
-              transform: shakeIndex === i ? "translateX(4px)" : "none",
-              transition: "transform 0.1s ease, opacity 0.2s ease",
-            }}
+            className={`order-tap-tile ${shakeIndex === i ? "shake-error" : ""}`}
           >
             {item}
           </button>
         ))}
       </div>
 
-      <button style={{ marginTop: "1rem" }} disabled={!allPlaced} onClick={() => onSubmit(placed.join(","))}>
+      <button className="btn btn-primary" disabled={!allPlaced} onClick={() => onSubmit(placed.join(","))}>
         Готово
       </button>
     </div>

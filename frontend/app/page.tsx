@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, type CSSProperties } from "react";
+import QuestMapNode from "../components/QuestMapNode";
+import { buildQuestMapEntries, type QuestMapEntry } from "../lib/questMap";
 
 type Subject = {
   id: number;
@@ -13,6 +15,7 @@ type Quest = {
   subject_id: number;
   grade: number;
   title: string;
+  completed: boolean;
 };
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -40,11 +43,20 @@ export default function Home() {
   const subjectName = (subjectId: number) =>
     subjects?.find((s) => s.id === subjectId)?.name ?? "Предмет";
 
-  const questsBySubject = (quests ?? []).reduce<Record<number, Quest[]>>((acc, q) => {
-    if (!acc[q.subject_id]) acc[q.subject_id] = [];
-    acc[q.subject_id].push(q);
-    return acc;
-  }, {});
+  // Node status (completed / current / locked) is derived from the full
+  // program order returned by the backend, before the quests get split into
+  // per-subject path sections below.
+  const questMapEntries = buildQuestMapEntries(quests ?? []);
+
+  const entriesBySubject = questMapEntries.reduce<Record<number, QuestMapEntry<Quest>[]>>(
+    (acc, entry) => {
+      const key = entry.quest.subject_id;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(entry);
+      return acc;
+    },
+    {}
+  );
 
   return (
     <main className="page">
@@ -66,21 +78,24 @@ export default function Home() {
         </p>
       )}
 
-      {Object.entries(questsBySubject).map(([subjectId, subjectQuests], sectionIndex) => (
+      {Object.entries(entriesBySubject).map(([subjectId, entries], sectionIndex) => (
         <section
           key={subjectId}
           className="subject-section stagger-item"
           style={{ "--stagger-index": sectionIndex } as CSSProperties}
         >
           <h2 className="subject-title">{subjectName(Number(subjectId))}</h2>
-          <ul className="quest-grid">
-            {subjectQuests.map((q) => (
-              <li key={q.id}>
-                <a href={`/quest/${q.id}`} className="card quest-card">
-                  <span className="quest-card-grade">{q.grade} класс</span>
-                  <p className="quest-card-title">{q.title}</p>
-                </a>
-              </li>
+          <ul className="quest-map">
+            {entries.map((entry) => (
+              <QuestMapNode
+                key={entry.quest.id}
+                questId={entry.quest.id}
+                title={entry.quest.title}
+                grade={entry.quest.grade}
+                status={entry.status}
+                icon={entry.icon}
+                index={entry.globalIndex}
+              />
             ))}
           </ul>
         </section>

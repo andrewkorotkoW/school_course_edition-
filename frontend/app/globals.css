@@ -93,27 +93,6 @@ a {
   color: var(--color-text);
 }
 
-.quest-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-sm);
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-@media (min-width: 600px) {
-  .quest-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 900px) {
-  .quest-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
 /* Card */
 
 .card {
@@ -133,32 +112,216 @@ a {
   transform: translateY(-1px);
 }
 
-/* Quest card: a card that is also a full-size tap target / link */
+/* Quest map: a winding park path of attraction nodes, replacing the flat
+   quest list on the home page. One <ul class="quest-map"> per subject
+   section acts as a path; node count/spacing is driven by list length, not
+   hardcoded positions. */
 
-.quest-card {
+.quest-map {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: var(--space-sm) 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
-  min-height: 44px;
-  cursor: pointer;
+  gap: var(--space-lg);
 }
 
-.quest-card-grade {
+.quest-map::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 36px;
+  width: 6px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--color-border) 0,
+    var(--color-border) 12px,
+    transparent 12px,
+    transparent 22px
+  );
+  border-radius: var(--radius-pill);
+}
+
+.quest-map-node-row {
+  position: relative;
+  display: flex;
+  padding-left: 76px;
+}
+
+.quest-map-node-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+  max-width: 320px;
+}
+
+.quest-map-node {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  background: var(--color-surface);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  box-shadow: var(--shadow-sm);
+  font-family: var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.quest-map-node:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.quest-map-node:active {
+  transform: translateY(-1px);
+}
+
+.quest-map-node-badge {
+  position: relative;
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.quest-map-node-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.quest-map-node-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.quest-map-node-grade {
   display: inline-block;
   align-self: flex-start;
-  padding: 0.15rem 0.6rem;
+  padding: 0.1rem 0.55rem;
   border-radius: var(--radius-pill);
-  background: var(--color-accent);
-  color: var(--color-text);
-  font-size: 0.8rem;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
   font-weight: 600;
 }
 
-.quest-card-title {
+.quest-map-node-title {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+/* Completed: checked off, badge tinted success */
+
+.quest-map-node-completed .quest-map-node-badge {
+  background: var(--color-success-bg);
+}
+
+.quest-map-node-check {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-success);
+  color: #fff;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Current: the single next-available node, highlighted and gently pulsing */
+
+.quest-map-node-current {
+  box-shadow: var(--shadow-lift);
+}
+
+.quest-map-node-current .quest-map-node-badge {
+  background: var(--color-primary);
+  animation: pulse-success 1.6s ease-in-out infinite;
+}
+
+.quest-map-node-current .quest-map-node-title {
+  color: var(--color-primary-dark);
+}
+
+/* Locked: dimmed, padlocked; clicking shows a soft hint, no navigation */
+
+.quest-map-node-locked {
+  opacity: 0.6;
+}
+
+.quest-map-node-locked .quest-map-node-badge {
+  background: var(--color-border);
+  filter: grayscale(0.4);
+}
+
+.quest-map-node-lock {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quest-map-hint {
+  margin: 0;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  font-size: 0.85rem;
+  animation: fade-in-up 0.25s ease both;
+}
+
+@media (min-width: 600px) {
+  /* Tablet+: the path zigzags left/right around a centered line instead of
+     a single vertical lane. */
+  .quest-map::before {
+    left: 50%;
+  }
+
+  .quest-map-node-row {
+    padding-left: 0;
+  }
+
+  .quest-map-node-row:nth-child(odd) {
+    justify-content: flex-end;
+    padding-right: calc(50% + var(--space-lg));
+  }
+
+  .quest-map-node-row:nth-child(even) {
+    justify-content: flex-start;
+    padding-left: calc(50% + var(--space-lg));
+  }
 }
 
 /* Buttons */

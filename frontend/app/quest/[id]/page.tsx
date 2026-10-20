@@ -33,6 +33,9 @@ export default function QuestPage({ params }: { params: { id: string } }) {
   const [index, setIndex] = useState<number | null>(null);
   const [inputValue, setInputValue] = useState("");
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  // Bumped on every submit (right or wrong) so the feedback block remounts
+  // and its CSS animation (pulse/shake) replays even on a repeated answer.
+  const [attempt, setAttempt] = useState(0);
   const [finished, setFinished] = useState(false);
 
   useEffect(() => {
@@ -76,6 +79,7 @@ export default function QuestPage({ params }: { params: { id: string } }) {
     });
     const result: Feedback = await res.json();
     setFeedback(result);
+    setAttempt((a) => a + 1);
   }
 
   async function finishQuest(isCancelled?: () => boolean) {
@@ -106,66 +110,126 @@ export default function QuestPage({ params }: { params: { id: string } }) {
 
   if (finished) {
     return (
-      <main style={{ fontFamily: "sans-serif", padding: "2rem" }}>
-        <h1>Квест пройден! 🎉</h1>
-        <a href="/">← К заданиям</a>
+      <main className="page quest-page">
+        <div className="card quest-finished fade-in-up">
+          <span className="confetti-piece" aria-hidden="true" />
+          <span className="confetti-piece" aria-hidden="true" />
+          <span className="confetti-piece" aria-hidden="true" />
+          <span className="confetti-piece" aria-hidden="true" />
+          <span className="confetti-piece" aria-hidden="true" />
+          <span className="confetti-piece" aria-hidden="true" />
+          <span className="confetti-piece" aria-hidden="true" />
+          <span className="confetti-piece" aria-hidden="true" />
+          <p className="quest-finished-emoji">🎉</p>
+          <h1 className="quest-finished-title">Квест пройден!</h1>
+          <a href="/" className="btn btn-primary btn-lg quest-finished-link">
+            ← К заданиям
+          </a>
+        </div>
       </main>
     );
   }
 
-  if (!tasks || index === null) return <main style={{ padding: "2rem" }}>Загрузка...</main>;
+  if (!tasks || index === null) {
+    return (
+      <main className="page quest-page">
+        <div className="state-message state-message-loading state-message-loading-inner fade-in-up">
+          <span className="spinner" />
+          Загрузка...
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <main style={{ fontFamily: "sans-serif", padding: "2rem", maxWidth: 480 }}>
-      <p>
-        Задание {index + 1} из {tasks.length}
-      </p>
-      <h2>{currentTask?.prompt}</h2>
+    <main className="page quest-page">
+      <div className="quest-progress">
+        <p className="quest-progress-label">
+          Задание {index + 1} из {tasks.length}
+        </p>
+        <div
+          className="quest-progress-track"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={tasks.length}
+          aria-valuenow={index + 1}
+        >
+          <div
+            className="quest-progress-fill"
+            style={{ width: `${(index / tasks.length) * 100}%` }}
+          />
+        </div>
+      </div>
 
-      {currentTask?.type === "choice" && !feedback && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          {currentTask.options?.map((opt) => (
-            <button key={opt} onClick={() => submitAnswer(opt)}>
-              {opt}
+      <div key={index} className="card quest-task-card fade-in-up">
+        <h2 className="quest-task-prompt">{currentTask?.prompt}</h2>
+
+        {currentTask?.type === "choice" && !feedback && (
+          <div className="quest-choices">
+            {currentTask.options?.map((opt) => (
+              <button
+                key={opt}
+                className="btn quest-choice-btn"
+                onClick={() => submitAnswer(opt)}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {currentTask?.type === "input" && !feedback && (
+          <div className="quest-input-row">
+            <input
+              className="quest-input"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+            />
+            <button className="btn btn-primary" onClick={() => submitAnswer(inputValue)}>
+              Проверить
             </button>
-          ))}
-        </div>
-      )}
+          </div>
+        )}
 
-      {currentTask?.type === "input" && !feedback && (
-        <div style={{ display: "flex", gap: "0.5rem" }}>
-          <input value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
-          <button onClick={() => submitAnswer(inputValue)}>Проверить</button>
-        </div>
-      )}
-
-      {currentTask?.type === "puzzle" && !feedback && (
-        <>
-          {currentTask.puzzle_kind === "count_click" && (
-            <CountClickPuzzle config={currentTask.config ?? {}} onSubmit={submitAnswer} />
-          )}
-          {currentTask.puzzle_kind === "order_tap" && (
-            <OrderTapPuzzle config={currentTask.config ?? {}} onSubmit={submitAnswer} />
-          )}
-          {currentTask.puzzle_kind !== "count_click" && currentTask.puzzle_kind !== "order_tap" && (
-            <p style={{ color: "crimson" }}>
-              Неизвестный тип головоломки: {currentTask.puzzle_kind}
-            </p>
-          )}
-        </>
-      )}
+        {currentTask?.type === "puzzle" && !feedback && (
+          <div className="quest-puzzle-wrapper">
+            {currentTask.puzzle_kind === "count_click" && (
+              <CountClickPuzzle config={currentTask.config ?? {}} onSubmit={submitAnswer} />
+            )}
+            {currentTask.puzzle_kind === "order_tap" && (
+              <OrderTapPuzzle config={currentTask.config ?? {}} onSubmit={submitAnswer} />
+            )}
+            {currentTask.puzzle_kind !== "count_click" && currentTask.puzzle_kind !== "order_tap" && (
+              <p className="state-message state-message-error">
+                Неизвестный тип головоломки: {currentTask.puzzle_kind}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
 
       {feedback && (
-        <div style={{ marginTop: "1rem" }}>
+        <div
+          key={attempt}
+          className={
+            feedback.correct
+              ? "quest-feedback quest-feedback-success pulse-success"
+              : "quest-feedback quest-feedback-error shake-error"
+          }
+        >
           {feedback.correct ? (
             <>
-              <p style={{ color: "green" }}>Верно!</p>
-              <button onClick={handleNext}>Дальше →</button>
+              <p className="quest-feedback-success-text">✓ Верно!</p>
+              <button className="btn btn-primary btn-lg" onClick={handleNext}>
+                Дальше →
+              </button>
             </>
           ) : (
             <>
-              <p style={{ color: "crimson" }}>Пока не то. {feedback.explanation}</p>
-              <button onClick={() => setFeedback(null)}>Попробовать ещё раз</button>
+              <p className="quest-feedback-error-text">Пока не то. {feedback.explanation}</p>
+              <button className="btn" onClick={() => setFeedback(null)}>
+                Попробовать ещё раз
+              </button>
             </>
           )}
         </div>

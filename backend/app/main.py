@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import health, students, subjects, tasks
+from app.api.routes import admin, health, students, subjects, tasks
 from app.core.config import settings
 from app.db.session import Base, engine
 
@@ -18,6 +18,7 @@ app.include_router(health.router)
 app.include_router(subjects.router)
 app.include_router(students.router)
 app.include_router(tasks.router)
+app.include_router(admin.router)
 
 
 @app.on_event("startup")

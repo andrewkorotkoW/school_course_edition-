@@ -1,15 +1,16 @@
-"""Dev-only seed data: one quest per subject per grade (1-4), each with a few
-real tasks tied to that grade's typical first topic. Run with:
+"""Dev-only seed data: one quest per subject per grade (1-4, plus 5 for math/russian),
+each with a few real tasks tied to that grade's typical first topic. Run with:
 
     docker compose exec backend python -m app.db.seed
 """
 from sqlalchemy import select
 
 from app.db.session import Base, SessionLocal, engine
-from app.models import Parent, Quest, Student, Subject, Task
+from app.models import Parent, Program, ProgramQuest, Quest, Student, Subject, Task
 
 # Matches DEMO_STUDENT_ID hardcoded in the frontend scaffold until real auth exists.
 DEMO_STUDENT_ID = 1
+DEFAULT_PROGRAM_TITLE = "Математика и русский, 1 класс"
 
 SUBJECTS = [
     {"slug": "math", "name": "Математика"},
@@ -115,6 +116,31 @@ QUESTS: dict[str, dict[int, dict]] = {
                     "prompt": "936 ÷ 4 = ?",
                     "correct_answer": "234",
                     "explanation": "4 × 234 = 936, значит 936 ÷ 4 = 234.",
+                },
+            ],
+        },
+        5: {
+            "title": "Городок Чисел: Дроби и проценты",
+            "story_text": "Торговец городка пересчитывает скидки и делит товар на равные доли.",
+            "tasks": [
+                {
+                    "type": "input",
+                    "prompt": "0,3 + 0,45 = ?",
+                    "correct_answer": "0,75",
+                    "explanation": "Сложи десятичные дроби по разрядам: 0,30 + 0,45 = 0,75.",
+                },
+                {
+                    "type": "choice",
+                    "prompt": "Сколько будет 50% от 80?",
+                    "options": ["20", "40", "60"],
+                    "correct_answer": "40",
+                    "explanation": "50% — это половина, а половина от 80 равна 40.",
+                },
+                {
+                    "type": "input",
+                    "prompt": "1,2 × 3 = ?",
+                    "correct_answer": "3,6",
+                    "explanation": "1,2 × 3: умножь 12 × 3 = 36, затем верни запятую — 3,6.",
                 },
             ],
         },
@@ -224,6 +250,32 @@ QUESTS: dict[str, dict[int, dict]] = {
                 },
             ],
         },
+        5: {
+            "title": "Городок Разбора",
+            "story_text": "Мастер городка разбирает слова по составу и предложения по частям.",
+            "tasks": [
+                {
+                    "type": "choice",
+                    "prompt": "В слове «поездка» корень — это:",
+                    "options": ["по", "езд", "ка"],
+                    "correct_answer": "езд",
+                    "explanation": "«Езд» — общая часть слов «ездить», «поездка», «въезд»: это корень.",
+                },
+                {
+                    "type": "input",
+                    "prompt": "Назови приставку в слове «подснежник».",
+                    "correct_answer": "под",
+                    "explanation": "«Под-» стоит перед корнем «снеж» и добавляет значение «расположенный под чем-то».",
+                },
+                {
+                    "type": "choice",
+                    "prompt": "Предложение «Когда закончился дождь, вышло солнце» является:",
+                    "options": ["простым", "сложным", "восклицательным"],
+                    "correct_answer": "сложным",
+                    "explanation": "В нём две грамматические основы («дождь закончился» и «солнце вышло»), значит оно сложное.",
+                },
+            ],
+        },
     },
 }
 
@@ -240,6 +292,7 @@ def run() -> None:
             db.add(Student(id=DEMO_STUDENT_ID, name="Демо-ученик", grade=1, parent_id=parent.id))
             db.flush()
 
+        grade_1_quest_ids: list[int] = []
         for subject_data in SUBJECTS:
             subject = db.scalar(select(Subject).where(Subject.slug == subject_data["slug"]))
             if subject is None:
@@ -251,21 +304,34 @@ def run() -> None:
                 quest = db.scalar(
                     select(Quest).where(Quest.subject_id == subject.id, Quest.grade == grade)
                 )
-                if quest is not None:
-                    continue  # already seeded
+                if quest is None:
+                    quest = Quest(
+                        subject_id=subject.id,
+                        grade=grade,
+                        order=1,
+                        title=quest_data["title"],
+                        story_text=quest_data["story_text"],
+                    )
+                    db.add(quest)
+                    db.flush()
 
-                quest = Quest(
-                    subject_id=subject.id,
-                    grade=grade,
-                    order=1,
-                    title=quest_data["title"],
-                    story_text=quest_data["story_text"],
-                )
-                db.add(quest)
-                db.flush()
+                    for i, task_data in enumerate(quest_data["tasks"], start=1):
+                        db.add(Task(quest_id=quest.id, order=i, **task_data))
 
-                for i, task_data in enumerate(quest_data["tasks"], start=1):
-                    db.add(Task(quest_id=quest.id, order=i, **task_data))
+                if grade == 1:
+                    grade_1_quest_ids.append(quest.id)
+
+        default_program = db.scalar(select(Program).where(Program.title == DEFAULT_PROGRAM_TITLE))
+        if default_program is None:
+            default_program = Program(title=DEFAULT_PROGRAM_TITLE, grade_from=1, grade_to=1)
+            db.add(default_program)
+            db.flush()
+            for quest_id in grade_1_quest_ids:
+                db.add(ProgramQuest(program_id=default_program.id, quest_id=quest_id))
+
+        demo_student = db.get(Student, DEMO_STUDENT_ID)
+        if demo_student is not None and demo_student.program_id is None:
+            demo_student.program_id = default_program.id
 
         db.commit()
     finally:

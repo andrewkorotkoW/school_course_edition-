@@ -23,9 +23,11 @@ class Student(Base):
     name: Mapped[str]
     grade: Mapped[int]  # 1-4 for the MVP slice
     parent_id: Mapped[int] = mapped_column(ForeignKey("parents.id"))
+    program_id: Mapped[int | None] = mapped_column(ForeignKey("programs.id"), nullable=True)
 
     parent: Mapped["Parent"] = relationship(back_populates="students")
     progress: Mapped[list["Progress"]] = relationship(back_populates="student")
+    program: Mapped["Program | None"] = relationship(back_populates="students")
 
 
 class Subject(Base):
@@ -70,6 +72,34 @@ class Task(Base):
     explanation: Mapped[str] = mapped_column(default="")
 
     quest: Mapped["Quest"] = relationship(back_populates="tasks")
+
+
+class Program(Base):
+    """A curated set of quests assigned to a student, built from existing quests."""
+
+    __tablename__ = "programs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str]
+    grade_from: Mapped[int]
+    grade_to: Mapped[int]
+
+    program_quests: Mapped[list["ProgramQuest"]] = relationship(back_populates="program")
+    students: Mapped[list["Student"]] = relationship(back_populates="program")
+
+
+class ProgramQuest(Base):
+    """Many-to-many link between a Program and its Quests."""
+
+    __tablename__ = "program_quests"
+    __table_args__ = (UniqueConstraint("program_id", "quest_id", name="uq_program_quest"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    program_id: Mapped[int] = mapped_column(ForeignKey("programs.id"))
+    quest_id: Mapped[int] = mapped_column(ForeignKey("quests.id"))
+
+    program: Mapped["Program"] = relationship(back_populates="program_quests")
+    quest: Mapped["Quest"] = relationship()
 
 
 class Progress(Base):

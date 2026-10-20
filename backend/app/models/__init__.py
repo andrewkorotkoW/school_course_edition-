@@ -1,3 +1,3 @@
-from app.models.student import Parent, Progress, Quest, Student, Subject, Task
+from app.models.student import Parent, Program, ProgramQuest, Progress, Quest, Student, Subject, Task
 
-__all__ = ["Parent", "Student", "Subject", "Quest", "Task", "Progress"]
+__all__ = ["Parent", "Student", "Subject", "Quest", "Task", "Progress", "Program", "ProgramQuest"]

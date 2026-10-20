@@ -1,6 +1,6 @@
 from sqlalchemy import select
 
-from app.models import Parent, ProgramQuest, Quest, Student, Subject
+from app.models import Parent, Progress, ProgramQuest, Quest, Student, Subject
 
 
 def make_subject(db_session, slug="math", name="Математика"):
@@ -209,3 +209,31 @@ class TestStudentQuestFiltering:
         assert returned_ids == {in_program_quest.id}
         assert other_quest_same_subject.id not in returned_ids
         assert other_quest_other_subject.id not in returned_ids
+
+    def test_quests_report_completed_flag_from_progress(self, client, db_session):
+        subject = make_subject(db_session)
+        completed_quest = make_quest(db_session, subject, grade=1, order=1, title="Пройден")
+        pending_quest = make_quest(db_session, subject, grade=1, order=2, title="Не пройден")
+
+        create_resp = client.post(
+            "/admin/programs",
+            json={
+                "title": "Два квеста",
+                "grade_from": 1,
+                "grade_to": 1,
+                "quest_ids": [completed_quest.id, pending_quest.id],
+            },
+        )
+        program_id = create_resp.json()["id"]
+
+        student = make_student(db_session, grade=1, program_id=None)
+        client.post(f"/admin/programs/{program_id}/assign", json={"student_id": student.id})
+        db_session.add(Progress(student_id=student.id, quest_id=completed_quest.id))
+        db_session.commit()
+
+        response = client.get(f"/students/{student.id}/quests")
+
+        assert response.status_code == 200
+        completed_by_id = {q["id"]: q["completed"] for q in response.json()}
+        assert completed_by_id[completed_quest.id] is True
+        assert completed_by_id[pending_quest.id] is False

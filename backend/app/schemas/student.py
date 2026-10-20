@@ -44,9 +44,11 @@ class TaskOut(BaseModel):
     options: list[str] | None
     puzzle_kind: str | None = None
     config: dict | None = None
+    completed: bool = False
 
 
 class TaskCheckIn(BaseModel):
+    student_id: int
     answer: str
 
 

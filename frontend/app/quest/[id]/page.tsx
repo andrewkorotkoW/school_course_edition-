@@ -18,6 +18,7 @@ type Task = {
   options: string[] | null;
   puzzle_kind?: string | null;
   config?: Record<string, unknown> | null;
+  completed: boolean;
 };
 
 type Feedback = {
@@ -29,50 +30,79 @@ export default function QuestPage({ params }: { params: { id: string } }) {
   const questId = params.id;
 
   const [tasks, setTasks] = useState<Task[] | null>(null);
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState<number | null>(null);
   const [inputValue, setInputValue] = useState("");
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [finished, setFinished] = useState(false);
 
   useEffect(() => {
-    fetch(`${API_URL}/quests/${questId}/tasks`)
+    let cancelled = false;
+
+    setTasks(null);
+    setIndex(null);
+    setFeedback(null);
+    setFinished(false);
+
+    fetch(`${API_URL}/quests/${questId}/tasks?student_id=${DEMO_STUDENT_ID}`)
       .then((res) => res.json())
-      .then(setTasks);
+      .then((loaded: Task[]) => {
+        if (cancelled) return;
+        setTasks(loaded);
+        // Resume where we left off: the first not-yet-correct task. If every
+        // task is already done (e.g. revisiting a finished quest), there's
+        // nothing to resume into - just confirm completion and show that.
+        const firstUnfinished = loaded.findIndex((t) => !t.completed);
+        if (firstUnfinished === -1) {
+          finishQuest(() => cancelled);
+        } else {
+          setIndex(firstUnfinished);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questId]);
 
-  const currentTask = tasks?.[index];
+  const currentTask = index !== null ? tasks?.[index] : undefined;
 
   async function submitAnswer(answer: string) {
     if (!currentTask) return;
     const res = await fetch(`${API_URL}/tasks/${currentTask.id}/check`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ answer }),
+      body: JSON.stringify({ student_id: DEMO_STUDENT_ID, answer }),
     });
     const result: Feedback = await res.json();
     setFeedback(result);
+  }
+
+  async function finishQuest(isCancelled?: () => boolean) {
+    // Last task answered correctly - mark the quest done. Idempotent on the
+    // backend, so calling it again when resuming an already-finished quest
+    // is harmless.
+    await fetch(`${API_URL}/students/quests/complete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ student_id: DEMO_STUDENT_ID, quest_id: Number(questId) }),
+    });
+    if (isCancelled?.()) return;
+    setFinished(true);
   }
 
   async function handleNext() {
     setFeedback(null);
     setInputValue("");
 
-    if (!tasks) return;
+    if (!tasks || index === null) return;
     if (index + 1 < tasks.length) {
       setIndex(index + 1);
       return;
     }
 
-    // Last task answered correctly - mark the quest done.
-    await fetch(`${API_URL}/students/quests/complete`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ student_id: DEMO_STUDENT_ID, quest_id: Number(questId) }),
-    });
-    setFinished(true);
+    await finishQuest();
   }
-
-  if (!tasks) return <main style={{ padding: "2rem" }}>Загрузка...</main>;
 
   if (finished) {
     return (
@@ -82,6 +112,8 @@ export default function QuestPage({ params }: { params: { id: string } }) {
       </main>
     );
   }
+
+  if (!tasks || index === null) return <main style={{ padding: "2rem" }}>Загрузка...</main>;
 
   return (
     <main style={{ fontFamily: "sans-serif", padding: "2rem", maxWidth: 480 }}>

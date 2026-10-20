@@ -122,3 +122,20 @@ class Progress(Base):
 
     student: Mapped["Student"] = relationship(back_populates="progress")
     quest: Mapped["Quest"] = relationship()
+
+
+class TaskProgress(Base):
+    """Records that a student answered one task correctly - finer-grained than
+    Progress (which only tracks whole-quest completion). Lets the quest page
+    resume at the right task after a reload instead of restarting from 1."""
+
+    __tablename__ = "task_progress"
+    __table_args__ = (UniqueConstraint("student_id", "task_id", name="uq_student_task"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("students.id"))
+    task_id: Mapped[int] = mapped_column(ForeignKey("tasks.id"))
+    completed_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+
+    student: Mapped["Student"] = relationship()
+    task: Mapped["Task"] = relationship()

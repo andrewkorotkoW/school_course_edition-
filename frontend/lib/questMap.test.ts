@@ -9,6 +9,16 @@ describe("buildQuestMapEntries", () => {
     expect(buildQuestMapEntries([])).toEqual([]);
   });
 
+  it("один квест, не пройден: он становится текущим, заблокированных нет", () => {
+    const entries = buildQuestMapEntries([quest(1, false)]);
+    expect(entries.map((e) => e.status)).toEqual(["current"]);
+  });
+
+  it("один квест, уже пройден: статус completed, текущего узла нет", () => {
+    const entries = buildQuestMapEntries([quest(1, true)]);
+    expect(entries.map((e) => e.status)).toEqual(["completed"]);
+  });
+
   it("два квеста: первый пройден, второй текущий (демо-программа)", () => {
     const entries = buildQuestMapEntries([quest(1, true), quest(2, false)]);
     expect(entries.map((e) => e.status)).toEqual(["completed", "current"]);

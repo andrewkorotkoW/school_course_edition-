@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type CSSProperties } from "react";
-import QuestMapNode from "../components/QuestMapNode";
+import QuestMapScene from "../components/QuestMapScene";
 import { buildQuestMapEntries, type QuestMapEntry } from "../lib/questMap";
 
 type Subject = {
@@ -87,19 +87,7 @@ export default function Home() {
           style={{ "--stagger-index": sectionIndex } as CSSProperties}
         >
           <h2 className="subject-title">{subjectName(Number(subjectId))}</h2>
-          <ul className="quest-map">
-            {entries.map((entry) => (
-              <QuestMapNode
-                key={entry.quest.id}
-                questId={entry.quest.id}
-                title={entry.quest.title}
-                grade={entry.quest.grade}
-                status={entry.status}
-                icon={entry.icon}
-                index={entry.globalIndex}
-              />
-            ))}
-          </ul>
+          <QuestMapScene entries={entries} />
         </section>
       ))}
     </main>

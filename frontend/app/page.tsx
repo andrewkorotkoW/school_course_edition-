@@ -30,15 +30,22 @@ export default function Home() {
   const [activeSubjectId, setActiveSubjectId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch(`${API_URL}/subjects`)
-      .then((res) => res.json())
+    // Backend на ошибку отвечает объектом {detail: ...}, а не списком — без проверки
+    // страница падала на reduce() по объекту вместо понятного сообщения
+    const fetchList = <T,>(url: string): Promise<T[]> =>
+      fetch(url).then(async (res) => {
+        const body = await res.json();
+        if (!res.ok || !Array.isArray(body)) throw new Error(typeof body?.detail === "string" ? body.detail : `HTTP ${res.status}`);
+        return body as T[];
+      });
+
+    fetchList<Subject>(`${API_URL}/subjects`)
       .then(setSubjects)
       .catch(() => setError("Не удалось получить предметы с backend"));
 
-    fetch(`${API_URL}/students/${DEMO_STUDENT_ID}/quests`)
-      .then((res) => res.json())
+    fetchList<Quest>(`${API_URL}/students/${DEMO_STUDENT_ID}/quests`)
       .then(setQuests)
-      .catch(() => setError("Не удалось получить квесты ученика с backend"));
+      .catch((e: Error) => setError(e.message === "Student not found" ? "Ученик не найден — выполните сид тестовых данных" : "Не удалось получить квесты ученика с backend"));
   }, []);
 
   const subjectName = (subjectId: number) =>

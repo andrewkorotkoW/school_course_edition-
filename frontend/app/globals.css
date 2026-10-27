@@ -112,201 +112,268 @@ a {
   transform: translateY(-1px);
 }
 
-/* Quest map: one inline SVG scene per subject, a winding park path of
-   attraction nodes replacing the flat quest list on the home page.
-   buildQuestMapLayout() derives the path and node coordinates for however
-   many quests the subject has; because the whole scene is a single <svg>
-   with a viewBox, it scales as one image at any width, so there is no
-   separate mobile/tablet breakpoint here (unlike the old <ul> version). */
+/* Quest map: игровое поле-парк (архитектура как у kinogonka.ru). Иллюстрация
+   2000×1100 — слой-подложка (сейчас процедурный canvas, см. lib/parkIllustration.ts;
+   позже — webp художника), поверх неё в координатах карты лежат облака, дорожка-
+   пунктир, клетки-точки с пинами и фишка ученика. Всё это внутри .park-map, который
+   зумится/двигается одним transform; HUD (.park-hud) живёт вне зума. */
 
-.quest-scene {
-  position: relative;
+.page-park {
+  max-width: 1200px;
+}
+
+.park-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+}
+
+.park-tab {
+  min-height: 44px;
+  padding: 0.5rem 1.2rem;
+  border: none;
+  border-radius: var(--radius-pill);
   background: var(--color-surface);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
-  padding: var(--space-sm);
-  overflow: hidden;
-}
-
-.quest-scene svg {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.quest-scene-layer-far,
-.quest-scene-layer-mid {
-  transition: transform 0.6s ease;
-}
-
-/* Far layer (clouds) drifts the least on hover; mid layer (island/pond/
-   stones) drifts more, giving a parallax illusion with no JS. The near
-   layer (path + nodes) never moves - it's the interactive foreground. */
-.quest-scene:hover .quest-scene-layer-far {
-  transform: translate(6px, -4px);
-}
-
-.quest-scene:hover .quest-scene-layer-mid {
-  transform: translate(-6px, 4px);
-}
-
-.quest-scene-cloud {
-  fill: #fffaf0;
-  opacity: 0.9;
-}
-
-.quest-scene-stone {
-  fill: #b7aca0;
-}
-
-.quest-scene-path {
-  fill: none;
-  stroke: #e8dcb8;
-  stroke-width: 16;
-  stroke-linecap: round;
-}
-
-.quest-scene-path-dashes {
-  fill: none;
-  stroke: #c9b685;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-dasharray: 2 16;
-}
-
-.quest-node {
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
 }
 
-.quest-node-badge-fill {
-  fill: var(--color-accent);
-  filter: drop-shadow(var(--shadow-sm));
+.park-tab-on {
+  background: var(--color-primary);
+  color: #fff;
 }
 
-.quest-node-icon {
-  font-size: 26px;
-  text-anchor: middle;
+.park-board {
+  position: relative;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  background: #0d1026;
 }
 
-.quest-node-label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
+.park-viewport {
+  position: relative;
+  height: min(78vh, 760px);
+  min-height: 420px;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.park-viewport:active {
+  cursor: grabbing;
+}
+
+.park-map {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.park-illustration {
+  position: absolute;
+  inset: 0;
+  width: 100%;
   height: 100%;
-  justify-content: center;
-  min-width: 0;
-  font-family: var(--font-sans);
+  display: block;
+  pointer-events: none;
 }
 
-.quest-node-grade {
-  display: inline-block;
-  align-self: flex-start;
-  padding: 0.1rem 0.55rem;
-  border-radius: var(--radius-pill);
-  background: var(--color-bg);
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-  font-weight: 600;
+.park-cloud {
+  position: absolute;
+  pointer-events: none;
+  animation: park-drift linear infinite;
 }
 
-.quest-node-title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-text);
-  overflow-wrap: anywhere;
+@keyframes park-drift {
+  from {
+    transform: translateX(-60px);
+  }
+  to {
+    transform: translateX(120px);
+  }
 }
 
-/* Completed: checked off, badge tinted success */
-
-.quest-node-completed .quest-node-badge-fill {
-  fill: var(--color-success-bg);
-  stroke: var(--color-success);
-  stroke-width: 3;
+.park-bird {
+  position: absolute;
+  width: 46px;
+  height: 20px;
+  pointer-events: none;
+  animation: park-fly 14s linear infinite;
 }
 
-.quest-node-check circle {
-  fill: var(--color-success);
-}
-
-.quest-node-check text {
-  fill: #fff;
-  font-size: 12px;
-  text-anchor: middle;
-}
-
-/* Current: the single next-available node, highlighted and gently pulsing */
-
-.quest-node-current .quest-node-badge-fill {
-  fill: var(--color-primary);
-  stroke: var(--color-accent);
-  stroke-width: 4;
-}
-
-.quest-node-current .quest-node-title {
-  color: var(--color-primary-dark);
-}
-
-.quest-node-current .quest-node-badge-group {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: quest-node-pulse 2.2s ease-in-out infinite;
-}
-
-.quest-node-glow {
-  fill: none;
-  stroke: var(--color-primary);
-  stroke-width: 3;
-  opacity: 0.35;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: quest-node-glow-pulse 2.2s ease-in-out infinite;
-}
-
-@keyframes quest-node-pulse {
-  0%,
-  100% {
-    transform: scale(1);
+@keyframes park-fly {
+  from {
+    transform: translate(0, 0);
   }
   50% {
-    transform: scale(1.08);
+    transform: translate(240px, -30px);
+  }
+  to {
+    transform: translate(520px, 10px);
   }
 }
 
-@keyframes quest-node-glow-pulse {
-  0% {
-    transform: scale(1);
-    opacity: 0.35;
+.park-trail {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.park-trail path {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-dasharray: 10 12;
+  animation: park-march 1s linear infinite;
+  filter: drop-shadow(0 0 4px rgba(255, 201, 77, 0.9));
+}
+
+@keyframes park-march {
+  to {
+    stroke-dashoffset: -22;
   }
-  50%,
+}
+
+/* Клетка: якорь в точке дороги; точка-номер по центру, пин над ней, подпись снизу */
+
+.park-node {
+  position: absolute;
+  width: 0;
+  height: 0;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  outline: none;
+}
+
+.park-node:focus-visible .park-point {
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.7);
+}
+
+.park-point {
+  position: absolute;
+  left: -15px;
+  top: -15px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #2a2446;
+  border: 3px solid #9aa0b8;
+  color: #cfd3e6;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
+  transition: transform 0.15s ease;
+}
+
+.park-node:hover .park-point {
+  transform: scale(1.12);
+}
+
+.park-pin {
+  position: absolute;
+  left: -17px;
+  top: -50px;
+  width: 34px;
+  height: 46px;
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.5));
+  transform-origin: 50% 100%;
+}
+
+.park-node-title {
+  position: absolute;
+  left: -80px;
+  top: 19px;
+  width: 160px;
+  text-align: center;
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 8px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+
+.park-node:hover .park-node-title,
+.park-node:focus-visible .park-node-title,
+.park-node-current .park-node-title {
+  opacity: 1;
+}
+
+.park-node-completed .park-point {
+  border-color: #5fcf9e;
+  color: #9ff0cc;
+}
+
+.park-node-current .park-point {
+  border-color: var(--color-accent);
+  color: #fff;
+  background: #5a3f0f;
+  animation: park-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes park-pulse {
+  0%,
   100% {
-    transform: scale(1.4);
-    opacity: 0;
+    box-shadow: 0 0 0 6px rgba(255, 201, 77, 0.25), 0 0 18px rgba(255, 201, 77, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(255, 201, 77, 0.08), 0 0 26px rgba(255, 201, 77, 1);
   }
 }
 
-/* Locked: dimmed, padlocked; clicking shows a soft hint, no navigation */
-
-.quest-node-locked {
-  opacity: 0.65;
+.park-node-current .park-pin {
+  left: -21px;
+  top: -62px;
+  width: 42px;
+  height: 56px;
+  animation: park-bounce 1.6s ease-in-out infinite;
 }
 
-.quest-node-locked .quest-node-badge-fill {
-  fill: var(--color-border);
-  filter: grayscale(0.4);
+@keyframes park-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
-.quest-node-lock circle {
-  fill: var(--color-surface);
-  filter: drop-shadow(var(--shadow-sm));
+.park-node-locked .park-point {
+  border-color: #6e7390;
+  color: #9a9fb5;
+  background: #3b3f58;
 }
 
-.quest-node-lock text {
-  font-size: 13px;
-  text-anchor: middle;
+.park-node-locked {
+  opacity: 0.85;
 }
 
-.quest-node-hint {
+.park-hint {
+  position: absolute;
+  left: -90px;
+  top: 40px;
+  width: 180px;
   margin: 0;
   padding: 0.3rem 0.6rem;
   border-radius: var(--radius-sm);
@@ -315,6 +382,243 @@ a {
   font-family: var(--font-sans);
   font-size: 0.78rem;
   line-height: 1.2;
+  text-align: center;
+  box-shadow: var(--shadow-md);
+}
+
+.park-tip {
+  position: absolute;
+  width: 220px;
+  margin: -118px 0 0 -110px;
+  padding: 0.5rem 0.8rem;
+  border-radius: 0.8rem;
+  background: rgba(255, 248, 239, 0.97);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  line-height: 1.25;
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+.park-tip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  width: 14px;
+  height: 14px;
+  background: inherit;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.park-tip b {
+  color: var(--color-primary-dark);
+}
+
+.park-token {
+  position: absolute;
+  width: 52px;
+  height: 70px;
+  margin: -66px 0 0 -26px;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.55));
+}
+
+.park-token-figure {
+  width: 100%;
+  height: 100%;
+  animation: park-bob 1.4s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+
+@keyframes park-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+/* HUD поверх поля, вне зума */
+
+.park-hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.park-hud > * {
+  pointer-events: auto;
+}
+
+.park-badge {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 220px;
+  padding: 0.55rem 1.4rem 0.7rem;
+  border-radius: 0 0 22px 22px;
+  background: linear-gradient(#fff5e0, #ffe3b0);
+  color: var(--color-text);
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+}
+
+.park-badge-title {
+  font-size: 1.3rem;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  color: var(--color-primary-dark);
+}
+
+.park-badge-sub {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-top: 0.15rem;
+}
+
+.park-legend {
+  position: absolute;
+  left: 16px;
+  bottom: 78px;
+  display: flex;
+  gap: 0.9rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.park-legend span::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 0.35rem;
+  vertical-align: middle;
+}
+
+.park-legend-completed::before {
+  background: #5fcf9e;
+}
+
+.park-legend-current::before {
+  background: var(--color-accent);
+  box-shadow: 0 0 6px var(--color-accent);
+}
+
+.park-legend-locked::before {
+  background: #7d8299;
+}
+
+.park-mapctl {
+  position: absolute;
+  left: 16px;
+  bottom: 22px;
+  display: flex;
+  gap: 8px;
+}
+
+.park-mapctl button {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: #f3e6cf;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 1.1rem;
+  font-weight: 800;
+  box-shadow: 0 4px 0 #c9b38e, 0 6px 12px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+.park-cta {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 6px 0 var(--color-primary-dark), 0 10px 24px rgba(255, 122, 61, 0.45);
+}
+
+.park-cta:hover {
+  transform: translateX(-50%) translateY(-2px);
+}
+
+.park-cta:active {
+  transform: translateX(-50%) translateY(4px);
+  box-shadow: 0 2px 0 var(--color-primary-dark);
+}
+
+.park-cta-done {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  box-shadow: var(--shadow-md);
+}
+
+.park-progress {
+  position: absolute;
+  right: 16px;
+  bottom: 22px;
+  width: 240px;
+  padding: 0.6rem 0.9rem 0.7rem;
+  border-radius: 14px;
+  background: rgba(17, 19, 43, 0.82);
+  color: #fff;
+  font-size: 0.8rem;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+.park-progress-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+}
+
+.park-progress-track {
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.park-progress-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--color-secondary), #7be3b8);
+  box-shadow: 0 0 10px rgba(47, 168, 138, 0.8);
+  transition: width 0.6s ease;
+}
+
+@media (max-width: 700px) {
+  .park-viewport {
+    height: 70vh;
+  }
+  .park-badge {
+    min-width: 170px;
+    padding: 0.45rem 0.9rem 0.6rem;
+  }
+  .park-badge-title {
+    font-size: 1rem;
+  }
+  .park-legend {
+    display: none;
+  }
+  .park-progress {
+    width: 170px;
+    font-size: 0.7rem;
+  }
+  .park-cta {
+    bottom: 80px;
+    left: 50%;
+  }
 }
 
 /* Buttons */

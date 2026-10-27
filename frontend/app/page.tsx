@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
-import QuestMapScene from "../components/QuestMapScene";
-import { buildQuestMapEntries, type QuestMapEntry } from "../lib/questMap";
+import { useEffect, useState } from "react";
+import ParkBoard from "../components/ParkBoard";
+import { buildQuestMapEntries } from "../lib/questMap";
 
 type Subject = {
   id: number;
@@ -27,6 +27,7 @@ export default function Home() {
   const [subjects, setSubjects] = useState<Subject[] | null>(null);
   const [quests, setQuests] = useState<Quest[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [activeSubjectId, setActiveSubjectId] = useState<number | null>(null);
 
   useEffect(() => {
     fetch(`${API_URL}/subjects`)
@@ -43,7 +44,7 @@ export default function Home() {
   const subjectName = (subjectId: number) =>
     subjects?.find((s) => s.id === subjectId)?.name ?? "Предмет";
 
-  // Each subject is its own path: group quests by subject first, then derive
+  // Each subject is its own board: group quests by subject first, then derive
   // completed/current/locked per subject so e.g. the first russian quest can
   // be "current" even while every math quest is still unfinished.
   const questsBySubject = (quests ?? []).reduce<Record<number, Quest[]>>((acc, quest) => {
@@ -52,20 +53,16 @@ export default function Home() {
     acc[key].push(quest);
     return acc;
   }, {});
-
-  const entriesBySubject = Object.fromEntries(
-    Object.entries(questsBySubject).map(([subjectId, subjectQuests]) => [
-      subjectId,
-      buildQuestMapEntries(subjectQuests),
-    ])
-  ) as Record<number, QuestMapEntry<Quest>[]>;
+  const subjectIds = Object.keys(questsBySubject).map(Number);
+  const shownSubjectId = activeSubjectId !== null && questsBySubject[activeSubjectId] ? activeSubjectId : subjectIds[0];
+  const shownEntries = shownSubjectId !== undefined ? buildQuestMapEntries(questsBySubject[shownSubjectId]) : [];
 
   return (
-    <main className="page">
+    <main className="page page-park">
       <header className="page-header fade-in-up">
         <h1 className="page-title">EduQuest</h1>
         <p className="page-subtitle">
-          Выполняй задания по школьной программе. Без рейтингов и проигрышей.
+          Выполняй задания по школьной программе — каждое пройденное задание двигает фишку вперёд по парку.
         </p>
       </header>
 
@@ -80,16 +77,28 @@ export default function Home() {
         </p>
       )}
 
-      {Object.entries(entriesBySubject).map(([subjectId, entries], sectionIndex) => (
-        <section
-          key={subjectId}
-          className="subject-section stagger-item"
-          style={{ "--stagger-index": sectionIndex } as CSSProperties}
-        >
-          <h2 className="subject-title">{subjectName(Number(subjectId))}</h2>
-          <QuestMapScene entries={entries} />
+      {subjectIds.length > 1 && (
+        <div className="park-tabs fade-in-up" role="tablist" aria-label="Предметы">
+          {subjectIds.map((id) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={id === shownSubjectId}
+              className={`park-tab${id === shownSubjectId ? " park-tab-on" : ""}`}
+              onClick={() => setActiveSubjectId(id)}
+            >
+              {subjectName(id)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {shownSubjectId !== undefined && (
+        <section className="fade-in-up">
+          <ParkBoard key={shownSubjectId} entries={shownEntries} title={subjectName(shownSubjectId)} />
         </section>
-      ))}
+      )}
     </main>
   );
 }

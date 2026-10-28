@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EduQuest — Вариант A: SVG-парк с единой дорожкой</title>
+<style>
+  /* Палитра и шрифт скопированы из frontend/app/globals.css (инлайн, без подключения файла) */
+  :root {
+    --color-bg: #fff8ef;
+    --color-surface: #ffffff;
+    --color-primary: #ff7a3d;
+    --color-primary-dark: #cc4a1f;
+    --color-secondary: #2fa88a;
+    --color-accent: #ffc94d;
+    --color-text: #3a2e26;
+    --color-text-muted: #6b5c50;
+    --color-border: #f1e2cf;
+    --color-success: #227863;
+    --color-success-bg: #e4f7f0;
+    --color-error: #c4291d;
+    --color-error-bg: #fdeceb;
+
+    --space-xs: 0.5rem;
+    --space-sm: 0.75rem;
+    --space-md: 1.25rem;
+    --space-lg: 2rem;
+    --space-xl: 3rem;
+
+    --radius-sm: 0.75rem;
+    --radius-md: 1.25rem;
+    --radius-pill: 999px;
+
+    --shadow-sm: 0 2px 6px rgba(58, 46, 38, 0.08);
+    --shadow-md: 0 8px 24px rgba(58, 46, 38, 0.12);
+    --shadow-lift: 0 14px 30px rgba(58, 46, 38, 0.18);
+
+    --font-sans: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: var(--space-lg) var(--space-md) var(--space-xl);
+  }
+
+  .page-header {
+    margin-bottom: var(--space-lg);
+  }
+
+  .mockup-tag {
+    display: inline-block;
+    margin-bottom: var(--space-xs);
+    padding: 0.2rem 0.7rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-accent);
+    color: var(--color-text);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .page-title {
+    margin: 0 0 var(--space-xs);
+    font-size: 1.9rem;
+    color: var(--color-primary-dark);
+  }
+
+  .page-subtitle {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 1rem;
+  }
+
+  .scene-card {
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    padding: var(--space-sm);
+    overflow: hidden;
+  }
+
+  .scene-svg-wrap {
+    width: 100%;
+    line-height: 0;
+  }
+
+  .scene-svg-wrap svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* Легенда состояний узлов */
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    margin-top: var(--space-lg);
+    padding: var(--space-md);
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+  }
+
+  .legend-swatch {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: #fff;
+  }
+
+  .legend-swatch-completed {
+    background: var(--color-success);
+  }
+
+  .legend-swatch-current {
+    background: var(--color-primary);
+    animation: legend-pulse 1.6s ease-in-out infinite;
+  }
+
+  .legend-swatch-locked {
+    background: var(--color-border);
+    color: var(--color-text-muted);
+  }
+
+  @keyframes legend-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+  }
+
+  /* --- Сцена: SVG-парк --- */
+
+  .node-label-bg {
+    fill: var(--color-surface);
+    opacity: 0.92;
+  }
+
+  .node-label-text {
+    font-family: var(--font-sans);
+    font-size: 22px;
+    font-weight: 600;
+    fill: var(--color-text);
+  }
+
+  .node-grade-text {
+    font-family: var(--font-sans);
+    font-size: 15px;
+    font-weight: 600;
+    fill: var(--color-text-muted);
+  }
+
+  .path-line {
+    fill: none;
+    stroke: #e8dcb8;
+    stroke-width: 22;
+    stroke-linecap: round;
+  }
+
+  .path-line-dashes {
+    fill: none;
+    stroke: #c9b685;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 2 20;
+  }
+
+  /* Узел: пройден — приглушённые тона, галочка */
+
+  .map-node-completed .node-badge-fill {
+    fill: var(--color-success-bg);
+    stroke: var(--color-success);
+    stroke-width: 3;
+  }
+
+  .map-node-completed .node-badge-icon {
+    fill: var(--color-success);
+  }
+
+  .map-node-completed .node-label-text {
+    color: var(--color-text-muted);
+  }
+
+  /* Узел: следующий доступный — выделен, едва заметно пульсирует */
+
+  .map-node-current .node-badge-fill {
+    fill: var(--color-primary);
+    stroke: var(--color-accent);
+    stroke-width: 4;
+  }
+
+  .map-node-current .node-badge-icon {
+    fill: #ffffff;
+  }
+
+  .map-node-current .node-label-text {
+    fill: var(--color-primary-dark);
+    font-weight: 700;
+  }
+
+  .map-node-current .node-badge-group {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: node-pulse 2.2s ease-in-out infinite;
+  }
+
+  .map-node-current .node-glow {
+    fill: none;
+    stroke: var(--color-primary);
+    opacity: 0.35;
+    stroke-width: 3;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: node-glow-pulse 2.2s ease-in-out infinite;
+  }
+
+  @keyframes node-pulse {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.07) rotate(-2deg); }
+  }
+
+  @keyframes node-glow-pulse {
+    0% { transform: scale(1); opacity: 0.35; }
+    50% { transform: scale(1.35); opacity: 0; }
+    100% { transform: scale(1); opacity: 0; }
+  }
+
+  /* Узел: заперт — приглушён, замочек */
+
+  .map-node-locked .node-badge-fill {
+    fill: var(--color-border);
+    stroke: #d8c7a8;
+    stroke-width: 3;
+  }
+
+  .map-node-locked .node-badge-icon {
+    fill: var(--color-text-muted);
+  }
+
+  .map-node-locked .node-group {
+    opacity: 0.62;
+  }
+
+  .map-node-locked .node-label-text {
+    fill: var(--color-text-muted);
+    font-weight: 600;
+  }
+
+  /* Облака — едва заметный дрейф */
+
+  .cloud {
+    fill: #fffaf0;
+    opacity: 0.9;
+  }
+
+  .cloud-1 {
+    animation: cloud-drift-1 18s ease-in-out infinite alternate;
+  }
+
+  .cloud-2 {
+    animation: cloud-drift-2 24s ease-in-out infinite alternate;
+  }
+
+  .cloud-3 {
+    animation: cloud-drift-3 21s ease-in-out infinite alternate;
+  }
+
+  @keyframes cloud-drift-1 {
+    from { transform: translateX(-14px); }
+    to { transform: translateX(14px); }
+  }
+
+  @keyframes cloud-drift-2 {
+    from { transform: translateX(10px); }
+    to { transform: translateX(-16px); }
+  }
+
+  @keyframes cloud-drift-3 {
+    from { transform: translateX(-8px); }
+    to { transform: translateX(12px); }
+  }
+
+  /* Вода — едва заметное мерцание бликов */
+
+  .water-shimmer {
+    animation: shimmer 5s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 0.7; }
+  }
+
+  @media (max-width: 480px) {
+    .page {
+      padding: var(--space-md) var(--space-sm) var(--space-lg);
+    }
+
+    .page-title {
+      font-size: 1.5rem;
+    }
+
+    .page-subtitle {
+      font-size: 0.9rem;
+    }
+
+    .scene-card {
+      padding: var(--space-xs);
+      border-radius: var(--radius-sm);
+    }
+
+    .node-label-text {
+      font-size: 26px;
+    }
+
+    .node-grade-text {
+      font-size: 17px;
+    }
+
+    .legend {
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+  }
+</style>
+</head>
+<body>
+  <main class="page">
+    <header class="page-header">
+      <span class="mockup-tag">Макет A</span>
+      <h1 class="page-title">SVG-парк: остров с единой дорожкой</h1>
+      <p class="page-subtitle">
+        Карта программы «Математика», 1 класс — визуальный макет для согласования с продуктом.
+        Не связан с бэкендом, тестовые данные захардкожены.
+      </p>
+    </header>
+
+    <div class="scene-card">
+      <div class="scene-svg-wrap">
+        <svg viewBox="0 0 800 1300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Карта программы: остров с дорожкой уроков">
+          <defs>
+            <linearGradient id="skyWaterGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#eaf6f8" />
+              <stop offset="35%" stop-color="#cfeaf0" />
+              <stop offset="100%" stop-color="#9ed3e3" />
+            </linearGradient>
+            <linearGradient id="islandGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#e9ddb6" />
+              <stop offset="35%" stop-color="#cfe3ac" />
+              <stop offset="100%" stop-color="#a9d49a" />
+            </linearGradient>
+            <radialGradient id="pondGrad" cx="50%" cy="40%" r="60%">
+              <stop offset="0%" stop-color="#bfe6ef" />
+              <stop offset="100%" stop-color="#7cc0d6" />
+            </radialGradient>
+          </defs>
+
+          <!-- Небо и вода вокруг острова -->
+          <rect x="0" y="0" width="800" height="1300" fill="url(#skyWaterGrad)" />
+          <g class="water-shimmer">
+            <ellipse cx="90" cy="1240" rx="60" ry="8" fill="#ffffff" opacity="0.5" />
+            <ellipse cx="700" cy="60" rx="50" ry="6" fill="#ffffff" opacity="0.4" />
+            <ellipse cx="60" cy="130" rx="40" ry="6" fill="#ffffff" opacity="0.4" />
+          </g>
+
+          <!-- Облака -->
+          <g class="cloud cloud-1">
+            <ellipse cx="110" cy="70" rx="55" ry="22" />
+            <ellipse cx="160" cy="60" rx="38" ry="18" />
+            <ellipse cx="70" cy="62" rx="32" ry="16" />
+          </g>
+          <g class="cloud cloud-2">
+            <ellipse cx="620" cy="110" rx="60" ry="24" />
+            <ellipse cx="680" cy="98" rx="36" ry="17" />
+            <ellipse cx="570" cy="100" rx="30" ry="15" />
+          </g>
+          <g class="cloud cloud-3">
+            <ellipse cx="400" cy="50" rx="45" ry="18" />
+            <ellipse cx="440" cy="40" rx="30" ry="14" />
+          </g>
+
+          <!-- Остров -->
+          <path d="M60,1250 C -10,1000 25,700 65,450 C 105,200 300,30 450,20 C 650,10 780,150 760,400 C 740,650 790,950 700,1150 C 600,1300 200,1320 60,1250 Z"
+                fill="url(#islandGrad)" />
+
+          <!-- Пруд на острове -->
+          <ellipse cx="610" cy="700" rx="70" ry="48" fill="url(#pondGrad)" />
+          <ellipse cx="610" cy="700" rx="46" ry="30" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.5" />
+
+          <!-- Камни -->
+          <g fill="#b7aca0">
+            <ellipse cx="520" cy="1020" rx="22" ry="14" />
+            <ellipse cx="548" cy="1030" rx="14" ry="10" />
+            <ellipse cx="120" cy="560" rx="20" ry="13" />
+            <ellipse cx="560" cy="300" rx="18" ry="12" />
+            <ellipse cx="300" cy="1150" rx="16" ry="10" />
+          </g>
+
+          <!-- Деревья (крона + ствол) -->
+          <g>
+            <!-- дерево-шаблон переиспользован через отдельные группы с разными координатами -->
+            <g transform="translate(230,1170)"><rect x="-5" y="0" width="10" height="26" fill="#8a5a3b" /><circle cx="0" cy="-16" r="30" fill="#4f9b5e" /><circle cx="-16" cy="-6" r="20" fill="#5fae6c" /><circle cx="16" cy="-6" r="20" fill="#5fae6c" /></g>
+            <g transform="translate(60,1080) scale(0.85)"><rect x="-5" y="0" width="10" height="26" fill="#8a5a3b" /><circle cx="0" cy="-16" r="30" fill="#4f9b5e" /><circle cx="-16" cy="-6" r="20" fill="#5fae6c" /><circle cx="16" cy="-6" r="20" fill="#5fae6c" /></g>
+            <g transform="translate(470,980) scale(0.9)"><rect x="-5" y="0" width="10" height="26" fill="#8a5a3b" /><circle cx="0" cy="-16" r="30" fill="#4f9b5e" /><circle cx="-16" cy="-6" r="20" fill="#5fae6c" /><circle cx="16" cy="-6" r="20" fill="#5fae6c" /></g>
+            <g transform="translate(90,830) scale(0.8)"><rect x="-5" y="0" width="10" height="26" fill="#8a5a3b" /><circle cx="0" cy="-16" r="30" fill="#4f9b5e" /><circle cx="-16" cy="-6" r="20" fill="#5fae6c" /><circle cx="16" cy="-6" r="20" fill="#5fae6c" /></g>
+            <g transform="translate(560,830) scale(1.05)"><rect x="-5" y="0" width="10" height="26" fill="#8a5a3b" /><circle cx="0" cy="-16" r="30" fill="#4f9b5e" /><circle cx="-16" cy="-6" r="20" fill="#5fae6c" /><circle cx="16" cy="-6" r="20" fill="#5fae6c" /></g>
+            <g transform="translate(270,690) scale(0.9)"><rect x="-5" y="0" width="10" height="26" fill="#8a5a3b" /><circle cx="0" cy="-16" r="30" fill="#4f9b5e" /><circle cx="-16" cy="-6" r="20" fill="#5fae6c" /><circle cx="16" cy="-6" r="20" fill="#5fae6c" /></g>
+            <g transform="translate(520,560) scale(0.85)"><rect x="-5" y="0" width="10" height="26" fill="#8a5a3b" /><circle cx="0" cy="-16" r="30" fill="#4f9b5e" /><circle cx="-16" cy="-6" r="20" fill="#5fae6c" /><circle cx="16" cy="-6" r="20" fill="#5fae6c" /></g>
+            <g transform="translate(90,420) scale(0.8)"><rect x="-5" y="0" width="10" height="26" fill="#8a5a3b" /><circle cx="0" cy="-16" r="30" fill="#4f9b5e" /><circle cx="-16" cy="-6" r="20" fill="#5fae6c" /><circle cx="16" cy="-6" r="20" fill="#5fae6c" /></g>
+            <g transform="translate(330,420) scale(0.9)"><rect x="-5" y="0" width="10" height="26" fill="#8a5a3b" /><circle cx="0" cy="-16" r="30" fill="#4f9b5e" /><circle cx="-16" cy="-6" r="20" fill="#5fae6c" /><circle cx="16" cy="-6" r="20" fill="#5fae6c" /></g>
+            <g transform="translate(580,230) scale(0.85)"><rect x="-5" y="0" width="10" height="26" fill="#8a5a3b" /><circle cx="0" cy="-16" r="30" fill="#4f9b5e" /><circle cx="-16" cy="-6" r="20" fill="#5fae6c" /><circle cx="16" cy="-6" r="20" fill="#5fae6c" /></g>
+            <g transform="translate(120,220) scale(0.8)"><rect x="-5" y="0" width="10" height="26" fill="#8a5a3b" /><circle cx="0" cy="-16" r="30" fill="#4f9b5e" /><circle cx="-16" cy="-6" r="20" fill="#5fae6c" /><circle cx="16" cy="-6" r="20" fill="#5fae6c" /></g>
+          </g>
+
+          <!-- Кусты у дорожки -->
+          <g fill="#7cc26f">
+            <circle cx="230" cy="1120" r="14" />
+            <circle cx="380" cy="980" r="12" />
+            <circle cx="140" cy="840" r="13" />
+            <circle cx="440" cy="700" r="12" />
+            <circle cx="140" cy="540" r="13" />
+            <circle cx="470" cy="400" r="12" />
+            <circle cx="290" cy="250" r="12" />
+          </g>
+
+          <!-- Единая дорожка -->
+          <path class="path-line"
+                d="M150,1180 C150,1136.7 330,1093.3 330,1050 C330,1000 170,950 170,900 C170,853.3 390,806.7 390,760 C390,706.7 190,653.3 190,600 C190,553.3 420,506.7 420,460 C420,406.7 240,353.3 240,300 C240,250 430,200 430,150" />
+          <path class="path-line-dashes"
+                d="M150,1180 C150,1136.7 330,1093.3 330,1050 C330,1000 170,950 170,900 C170,853.3 390,806.7 390,760 C390,706.7 190,653.3 190,600 C190,553.3 420,506.7 420,460 C420,406.7 240,353.3 240,300 C240,250 430,200 430,150" />
+
+          <!-- Старт -->
+          <text x="150" y="1245" text-anchor="middle" font-family="var(--font-sans)" font-size="28">🏁</text>
+          <!-- Финиш -->
+          <text x="430" y="105" text-anchor="middle" font-family="var(--font-sans)" font-size="28">🏆</text>
+
+          <!-- Узел 1: пройден -->
+          <g class="map-node-completed node-group">
+            <g class="node-badge-group">
+              <circle class="node-badge-fill" cx="150" cy="1180" r="34" />
+              <text class="node-badge-icon" x="150" y="1190" text-anchor="middle" font-size="26" font-weight="700">✓</text>
+            </g>
+            <rect class="node-label-bg" x="196" y="1156" width="230" height="52" rx="14" />
+            <text class="node-grade-text" x="208" y="1176">Урок 1</text>
+            <text class="node-label-text" x="208" y="1199">Знакомство с цифрами</text>
+          </g>
+
+          <!-- Узел 2: пройден -->
+          <g class="map-node-completed node-group">
+            <g class="node-badge-group">
+              <circle class="node-badge-fill" cx="330" cy="1050" r="34" />
+              <text class="node-badge-icon" x="330" y="1060" text-anchor="middle" font-size="26" font-weight="700">✓</text>
+            </g>
+            <rect class="node-label-bg" x="60" y="1026" width="200" height="52" rx="14" />
+            <text class="node-grade-text" x="72" y="1046">Урок 2</text>
+            <text class="node-label-text" x="72" y="1069">Счёт до 10</text>
+          </g>
+
+          <!-- Узел 3: пройден -->
+          <g class="map-node-completed node-group">
+            <g class="node-badge-group">
+              <circle class="node-badge-fill" cx="170" cy="900" r="34" />
+              <text class="node-badge-icon" x="170" y="910" text-anchor="middle" font-size="26" font-weight="700">✓</text>
+            </g>
+            <rect class="node-label-bg" x="216" y="876" width="220" height="52" rx="14" />
+            <text class="node-grade-text" x="228" y="896">Урок 3</text>
+            <text class="node-label-text" x="228" y="919">Сложение чисел</text>
+          </g>
+
+          <!-- Узел 4: следующий доступный (текущий) -->
+          <g class="map-node-current node-group">
+            <circle class="node-glow" cx="390" cy="760" r="34" />
+            <g class="node-badge-group">
+              <circle class="node-badge-fill" cx="390" cy="760" r="38" />
+              <text class="node-badge-icon" x="390" y="772" text-anchor="middle" font-size="28" font-weight="700">▶</text>
+            </g>
+            <rect class="node-label-bg" x="20" y="734" width="200" height="56" rx="14" />
+            <text class="node-grade-text" x="32" y="755">Урок 4 · сейчас</text>
+            <text class="node-label-text" x="32" y="778">Вычитание</text>
+          </g>
+
+          <!-- Узел 5: заперт -->
+          <g class="map-node-locked node-group">
+            <g class="node-badge-group">
+              <circle class="node-badge-fill" cx="190" cy="600" r="34" />
+              <text class="node-badge-icon" x="190" y="610" text-anchor="middle" font-size="24">🔒</text>
+            </g>
+            <rect class="node-label-bg" x="236" y="576" width="220" height="52" rx="14" />
+            <text class="node-grade-text" x="248" y="596">Урок 5</text>
+            <text class="node-label-text" x="248" y="619">Простые задачи</text>
+          </g>
+
+          <!-- Узел 6: заперт -->
+          <g class="map-node-locked node-group">
+            <g class="node-badge-group">
+              <circle class="node-badge-fill" cx="420" cy="460" r="34" />
+              <text class="node-badge-icon" x="420" y="470" text-anchor="middle" font-size="24">🔒</text>
+            </g>
+            <rect class="node-label-bg" x="70" y="436" width="200" height="52" rx="14" />
+            <text class="node-grade-text" x="82" y="456">Урок 6</text>
+            <text class="node-label-text" x="82" y="479">Счёт до 20</text>
+          </g>
+
+          <!-- Узел 7: заперт -->
+          <g class="map-node-locked node-group">
+            <g class="node-badge-group">
+              <circle class="node-badge-fill" cx="240" cy="300" r="34" />
+              <text class="node-badge-icon" x="240" y="310" text-anchor="middle" font-size="24">🔒</text>
+            </g>
+            <rect class="node-label-bg" x="286" y="276" width="230" height="52" rx="14" />
+            <text class="node-grade-text" x="298" y="296">Урок 7</text>
+            <text class="node-label-text" x="298" y="319">Таблица сложения</text>
+          </g>
+
+          <!-- Узел 8: заперт (финальный) -->
+          <g class="map-node-locked node-group">
+            <g class="node-badge-group">
+              <circle class="node-badge-fill" cx="430" cy="150" r="34" />
+              <text class="node-badge-icon" x="430" y="160" text-anchor="middle" font-size="24">🔒</text>
+            </g>
+            <rect class="node-label-bg" x="56" y="126" width="220" height="52" rx="14" />
+            <text class="node-grade-text" x="68" y="146">Урок 8 · финал</text>
+            <text class="node-label-text" x="68" y="169">Итоговый квест</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <span class="legend-swatch legend-swatch-completed">✓</span>
+        Пройден
+      </div>
+      <div class="legend-item">
+        <span class="legend-swatch legend-swatch-current">▶</span>
+        Доступен сейчас
+      </div>
+      <div class="legend-item">
+        <span class="legend-swatch legend-swatch-locked">🔒</span>
+        Заперт
+      </div>
+    </div>
+  </main>
+</body>
+</html>

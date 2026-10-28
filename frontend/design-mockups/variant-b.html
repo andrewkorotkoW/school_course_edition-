@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EduQuest — Макет B: карта программы (CSS-слои)</title>
+<style>
+  /* Палитра и базовые токены — скопированы из frontend/app/globals.css */
+  :root {
+    --color-bg: #fff8ef;
+    --color-surface: #ffffff;
+    --color-primary: #ff7a3d;
+    --color-primary-dark: #cc4a1f;
+    --color-secondary: #2fa88a;
+    --color-accent: #ffc94d;
+    --color-text: #3a2e26;
+    --color-text-muted: #6b5c50;
+    --color-border: #f1e2cf;
+    --color-success: #227863;
+    --color-success-bg: #e4f7f0;
+    --color-error: #c4291d;
+    --color-error-bg: #fdeceb;
+
+    --radius-sm: 0.75rem;
+    --radius-md: 1.25rem;
+    --radius-pill: 999px;
+
+    --shadow-sm: 0 2px 6px rgba(58, 46, 38, 0.08);
+    --shadow-md: 0 8px 24px rgba(58, 46, 38, 0.12);
+    --shadow-lift: 0 14px 30px rgba(58, 46, 38, 0.18);
+
+    --font-sans: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 3rem;
+  }
+
+  .page-title {
+    margin: 0 0 0.25rem;
+    font-size: 1.9rem;
+    color: var(--color-primary-dark);
+  }
+
+  .page-subtitle {
+    margin: 0 0 0.5rem;
+    color: var(--color-text-muted);
+    font-size: 1rem;
+    max-width: 640px;
+  }
+
+  .hint {
+    margin: 0 0 1.5rem;
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    font-style: italic;
+  }
+
+  /* ---------------------------------------------------------------------
+     Сцена: вид сверху на парк из CSS-слоёв.
+     В отличие от варианта A (один inline SVG), здесь остров/лес/пруд/
+     тропа собраны из позиционированных div с градиентами и border-radius.
+     Слои сгруппированы по "глубине" (far / mid / near) — при наведении
+     курсора на сцену far- и mid-слои слегка смещаются относительно друг
+     друга, создавая параллакс без единого пикселя JS.
+  --------------------------------------------------------------------- */
+
+  .scene-wrap {
+    display: flex;
+    justify-content: center;
+  }
+
+  .scene {
+    position: relative;
+    width: 820px;
+    height: 900px;
+    max-width: 100%;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lift);
+    background: linear-gradient(165deg, #d8edc3 0%, #bfe3a0 55%, #a9d89c 100%);
+  }
+
+  .layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .layer-far,
+  .layer-mid {
+    transition: transform 0.6s ease;
+  }
+
+  /* far = облака: едва заметный, самый медленный сдвиг */
+  .scene:hover .layer-far {
+    transform: translate(10px, -6px);
+  }
+
+  /* mid = лес / пруд / цветы: смещаются заметнее, создавая ощущение глубины */
+  .scene:hover .layer-mid-forest {
+    transform: translate(-8px, -4px) scale(1.015);
+  }
+
+  .scene:hover .layer-mid-pond {
+    transform: translate(6px, 5px) scale(1.01);
+  }
+
+  .scene:hover .layer-mid-flowers {
+    transform: translate(-5px, 3px);
+  }
+
+  /* near = тропа и узлы — остаются на месте, это интерактивный передний план */
+  .layer-near {
+    z-index: 5;
+  }
+
+  /* --- Облака (far layer) --- */
+
+  .cloud {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.35) 70%, transparent 100%);
+    filter: blur(2px);
+  }
+
+  .cloud-1 { left: 60px; top: 0px; width: 160px; height: 60px; }
+  .cloud-2 { left: 320px; top: -20px; width: 200px; height: 70px; }
+  .cloud-3 { left: 600px; top: 10px; width: 150px; height: 55px; }
+
+  /* --- Лес (mid layer) --- */
+
+  .forest-blob {
+    position: absolute;
+    left: 50px;
+    top: 10px;
+    width: 560px;
+    height: 310px;
+    border-radius: 58% 42% 55% 45% / 48% 58% 42% 52%;
+    background: radial-gradient(ellipse at 38% 30%, #bfe3a0 0%, #8fc96d 65%, #76b357 100%);
+    opacity: 0.95;
+  }
+
+  .tree {
+    position: absolute;
+    border-radius: 50%;
+  }
+
+  .tree::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -10px;
+    width: 10px;
+    height: 16px;
+    background: #8a6240;
+    border-radius: 2px;
+    transform: translateX(-50%);
+  }
+
+  .tree-a { background: radial-gradient(circle at 35% 30%, #5f9e4a, #3f7a34 75%); }
+  .tree-b { background: radial-gradient(circle at 35% 30%, #4f8f42, #336b2c 75%); }
+
+  .tree-1 { left: 100px; top: 55px; width: 58px; height: 58px; }
+  .tree-2 { left: 180px; top: 35px; width: 48px; height: 48px; }
+  .tree-3 { left: 260px; top: 75px; width: 64px; height: 64px; }
+  .tree-4 { left: 70px; top: 150px; width: 54px; height: 54px; }
+  .tree-5 { left: 360px; top: 45px; width: 46px; height: 46px; }
+  .tree-6 { left: 440px; top: 100px; width: 56px; height: 56px; }
+  .tree-7 { left: 500px; top: 190px; width: 48px; height: 48px; }
+  .tree-8 { left: 150px; top: 220px; width: 60px; height: 60px; }
+  .tree-9 { left: 330px; top: 200px; width: 52px; height: 52px; }
+
+  /* --- Пруд (mid layer) --- */
+
+  .pond-blob {
+    position: absolute;
+    left: 250px;
+    top: 560px;
+    width: 470px;
+    height: 290px;
+    border-radius: 55% 45% 60% 40% / 45% 58% 42% 55%;
+    background: radial-gradient(ellipse at 45% 35%, #a9e2ef 0%, #6fc0dd 55%, #3f94b8 100%);
+    box-shadow: inset 0 0 40px rgba(20, 70, 90, 0.25);
+  }
+
+  .ripple {
+    position: absolute;
+    border: 2px solid rgba(255, 255, 255, 0.45);
+    border-radius: 50%;
+  }
+
+  .ripple-1 { left: 320px; top: 630px; width: 90px; height: 40px; }
+  .ripple-2 { left: 480px; top: 700px; width: 70px; height: 32px; }
+
+  .lily {
+    position: absolute;
+    width: 26px;
+    height: 20px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #6fae55, #4a8a3c);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .lily-1 { left: 420px; top: 610px; }
+  .lily-2 { left: 600px; top: 680px; }
+
+  .reed {
+    position: absolute;
+    width: 4px;
+    height: 34px;
+    background: #5c9e4e;
+    border-radius: 4px 4px 0 0;
+  }
+
+  .reed-1 { left: 290px; top: 540px; transform: rotate(-8deg); }
+  .reed-2 { left: 302px; top: 536px; transform: rotate(6deg); }
+  .reed-3 { left: 700px; top: 600px; transform: rotate(10deg); }
+  .reed-4 { left: 712px; top: 596px; transform: rotate(-4deg); }
+
+  /* --- Цветы на поляне (mid layer, лёгкая деталь) --- */
+
+  .flower {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    box-shadow:
+      0 0 0 2px rgba(255, 255, 255, 0.6),
+      -10px 0 0 -3px var(--color-accent),
+      10px 0 0 -3px var(--color-accent),
+      0 -10px 0 -3px var(--color-accent),
+      0 10px 0 -3px var(--color-accent);
+  }
+
+  .flower-1 { left: 600px; top: 330px; }
+  .flower-2 { left: 660px; top: 400px; }
+  .flower-3 { left: 180px; top: 400px; }
+  .flower-4 { left: 240px; top: 470px; }
+  .flower-5 { left: 560px; top: 500px; }
+
+  /* --- Тропа: цепочка "камней"-кружков вместо единого SVG-path --- */
+
+  .stone {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    margin-left: -7px;
+    margin-top: -7px;
+    border-radius: 50%;
+    background: #e8d9b8;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .stone-locked {
+    opacity: 0.55;
+  }
+
+  /* --- Узлы маршрута --- */
+
+  .node {
+    position: absolute;
+    width: 72px;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+
+  .node-badge {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 0.4rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.9rem;
+    box-shadow: var(--shadow-md);
+    background: var(--color-surface);
+  }
+
+  .node-label {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--color-text);
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.25;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Пройден */
+  .node-completed .node-badge {
+    background: var(--color-success-bg);
+    border: 3px solid var(--color-success);
+  }
+
+  .node-completed .node-check {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--color-success);
+    color: #fff;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .node-completed .node-label {
+    color: var(--color-success);
+  }
+
+  /* Следующий доступный — покачивается и слегка светится */
+  .node-current .node-badge {
+    background: var(--color-primary);
+    border: 3px solid var(--color-primary-dark);
+    animation: node-wobble 2.4s ease-in-out infinite, node-glow 2.4s ease-in-out infinite;
+    transform-origin: 50% 100%;
+  }
+
+  .node-current .node-label {
+    color: var(--color-primary-dark);
+    font-weight: 700;
+  }
+
+  @keyframes node-wobble {
+    0%, 100% { transform: rotate(-4deg); }
+    50% { transform: rotate(4deg); }
+  }
+
+  @keyframes node-glow {
+    0%, 100% { box-shadow: var(--shadow-md), 0 0 0 0 rgba(255, 122, 61, 0.55); }
+    50% { box-shadow: var(--shadow-md), 0 0 0 10px rgba(255, 122, 61, 0); }
+  }
+
+  /* Заблокирован */
+  .node-locked .node-badge {
+    background: var(--color-border);
+    filter: grayscale(0.5);
+    opacity: 0.75;
+  }
+
+  .node-locked .node-lock {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .node-locked .node-label {
+    color: var(--color-text-muted);
+  }
+
+  /* --- Легенда состояний --- */
+
+  .legend {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--color-surface);
+    border-radius: var(--radius-pill);
+    padding: 0.4rem 0.9rem 0.4rem 0.5rem;
+    box-shadow: var(--shadow-sm);
+    font-size: 0.85rem;
+  }
+
+  .legend-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .legend-dot-completed {
+    background: var(--color-success-bg);
+    border: 3px solid var(--color-success);
+  }
+
+  .legend-dot-current {
+    background: var(--color-primary);
+    border: 3px solid var(--color-primary-dark);
+  }
+
+  .legend-dot-locked {
+    background: var(--color-border);
+    filter: grayscale(0.5);
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <h1 class="page-title">Карта программы — Вариант B</h1>
+    <p class="page-subtitle">
+      Тот же сценарий «карта программы», что и в варианте A, но собран другой
+      техникой: вид сверху на парк из CSS-слоёв (градиенты, border-radius,
+      позиционированные div) вместо одного SVG, тропа — цепочка «камней»
+      через лес, поляну и пруд.
+    </p>
+    <p class="hint">Наведите курсор на сцену — декорации леса, пруда и облаков сдвигаются с разной скоростью (CSS-параллакс, без JS).</p>
+
+    <div class="scene-wrap">
+      <div class="scene" id="scene">
+        <!-- far: облака -->
+        <div class="layer layer-far">
+          <div class="cloud cloud-1"></div>
+          <div class="cloud cloud-2"></div>
+          <div class="cloud cloud-3"></div>
+        </div>
+
+        <!-- mid: лес -->
+        <div class="layer layer-mid-forest">
+          <div class="forest-blob"></div>
+          <div class="tree tree-a tree-1"></div>
+          <div class="tree tree-b tree-2"></div>
+          <div class="tree tree-a tree-3"></div>
+          <div class="tree tree-b tree-4"></div>
+          <div class="tree tree-a tree-5"></div>
+          <div class="tree tree-b tree-6"></div>
+          <div class="tree tree-a tree-7"></div>
+          <div class="tree tree-b tree-8"></div>
+          <div class="tree tree-a tree-9"></div>
+        </div>
+
+        <!-- mid: цветы на поляне -->
+        <div class="layer layer-mid-flowers">
+          <div class="flower flower-1"></div>
+          <div class="flower flower-2"></div>
+          <div class="flower flower-3"></div>
+          <div class="flower flower-4"></div>
+          <div class="flower flower-5"></div>
+        </div>
+
+        <!-- mid: пруд -->
+        <div class="layer layer-mid-pond">
+          <div class="pond-blob"></div>
+          <div class="ripple ripple-1"></div>
+          <div class="ripple ripple-2"></div>
+          <div class="lily lily-1"></div>
+          <div class="lily lily-2"></div>
+          <div class="reed reed-1"></div>
+          <div class="reed reed-2"></div>
+          <div class="reed reed-3"></div>
+          <div class="reed reed-4"></div>
+        </div>
+
+        <!-- near: тропа (камни) + узлы, неподвижный передний план -->
+        <div class="layer layer-near">
+          <!-- сегмент 1 -> 2 -->
+          <div class="stone" style="left:175px;top:135px;"></div>
+          <div class="stone" style="left:209px;top:155px;"></div>
+          <div class="stone" style="left:243px;top:175px;"></div>
+          <div class="stone" style="left:277px;top:195px;"></div>
+          <div class="stone" style="left:311px;top:215px;"></div>
+          <!-- сегмент 2 -> 3 -->
+          <div class="stone" style="left:344px;top:211px;"></div>
+          <div class="stone" style="left:376px;top:199px;"></div>
+          <div class="stone" style="left:408px;top:187px;"></div>
+          <div class="stone" style="left:440px;top:175px;"></div>
+          <div class="stone" style="left:472px;top:163px;"></div>
+          <!-- сегмент 3 -> 4 -->
+          <div class="stone" style="left:501px;top:178px;"></div>
+          <div class="stone" style="left:529px;top:202px;"></div>
+          <div class="stone" style="left:557px;top:226px;"></div>
+          <div class="stone" style="left:585px;top:250px;"></div>
+          <div class="stone" style="left:613px;top:274px;"></div>
+          <!-- сегмент 4 -> 5 (заблокированный участок) -->
+          <div class="stone stone-locked" style="left:602px;top:302px;"></div>
+          <div class="stone stone-locked" style="left:578px;top:332px;"></div>
+          <div class="stone stone-locked" style="left:554px;top:362px;"></div>
+          <div class="stone stone-locked" style="left:530px;top:392px;"></div>
+          <div class="stone stone-locked" style="left:506px;top:422px;"></div>
+          <!-- сегмент 5 -> 6 -->
+          <div class="stone stone-locked" style="left:474px;top:443px;"></div>
+          <div class="stone stone-locked" style="left:440px;top:461px;"></div>
+          <div class="stone stone-locked" style="left:406px;top:479px;"></div>
+          <div class="stone stone-locked" style="left:372px;top:497px;"></div>
+          <div class="stone stone-locked" style="left:338px;top:515px;"></div>
+          <!-- сегмент 6 -> 7 -->
+          <div class="stone stone-locked" style="left:352px;top:539px;"></div>
+          <div class="stone stone-locked" style="left:382px;top:565px;"></div>
+          <div class="stone stone-locked" style="left:412px;top:591px;"></div>
+          <div class="stone stone-locked" style="left:442px;top:617px;"></div>
+          <div class="stone stone-locked" style="left:472px;top:643px;"></div>
+          <!-- сегмент 7 -> 8 -->
+          <div class="stone stone-locked" style="left:505px;top:666px;"></div>
+          <div class="stone stone-locked" style="left:539px;top:688px;"></div>
+          <div class="stone stone-locked" style="left:573px;top:710px;"></div>
+          <div class="stone stone-locked" style="left:607px;top:732px;"></div>
+          <div class="stone stone-locked" style="left:641px;top:754px;"></div>
+
+          <!-- узлы -->
+          <div class="node node-completed" style="left:150px;top:120px;">
+            <div class="node-badge">📖<span class="node-check">✓</span></div>
+            <span class="node-label">1. Буквы и звуки</span>
+          </div>
+
+          <div class="node node-completed" style="left:320px;top:220px;">
+            <div class="node-badge">🔢<span class="node-check">✓</span></div>
+            <span class="node-label">2. Счёт до 10</span>
+          </div>
+
+          <div class="node node-completed" style="left:480px;top:160px;">
+            <div class="node-badge">✏️<span class="node-check">✓</span></div>
+            <span class="node-label">3. Простые слова</span>
+          </div>
+
+          <div class="node node-current" style="left:620px;top:280px;">
+            <div class="node-badge">➕</div>
+            <span class="node-label">4. Сложение</span>
+          </div>
+
+          <div class="node node-locked" style="left:500px;top:430px;">
+            <div class="node-badge">🎨<span class="node-lock">🔒</span></div>
+            <span class="node-label">5. Форма и цвет</span>
+          </div>
+
+          <div class="node node-locked" style="left:330px;top:520px;">
+            <div class="node-badge">📚<span class="node-lock">🔒</span></div>
+            <span class="node-label">6. Чтение вслух</span>
+          </div>
+
+          <div class="node node-locked" style="left:480px;top:650px;">
+            <div class="node-badge">➖<span class="node-lock">🔒</span></div>
+            <span class="node-label">7. Вычитание</span>
+          </div>
+
+          <div class="node node-locked" style="left:650px;top:760px;">
+            <div class="node-badge">🍂<span class="node-lock">🔒</span></div>
+            <span class="node-label">8. Времена года</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><span class="legend-dot legend-dot-completed"></span>Пройден</div>
+      <div class="legend-item"><span class="legend-dot legend-dot-current"></span>Доступен сейчас (покачивается)</div>
+      <div class="legend-item"><span class="legend-dot legend-dot-locked"></span>Заблокирован</div>
+    </div>
+  </div>
+</body>
+</html>
